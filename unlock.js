@@ -9,11 +9,15 @@ const error = document.getElementById('error');
 const copyButton = document.getElementById('copy-result');
 const linkHint = document.getElementById('link-hint');
 
+const usernameField = document.getElementById('username-field');
+const usernameInput = document.getElementById('username');
+
 let unlocked = '';
 let linkMarker = null;
 
-secretInput.setAttribute('autocomplete', 'current-password');
-secretInput.setAttribute('name', 'gst-team-passphrase');
+if (globalThis.GoldspireConstants?.ONEPASSWORD_LOGIN_USERNAME && usernameInput) {
+  usernameInput.value = GoldspireConstants.ONEPASSWORD_LOGIN_USERNAME;
+}
 
 function showError(message) {
   error.hidden = false;
@@ -41,7 +45,8 @@ function markerFromHash() {
 function setupLinkMode() {
   pasteField.hidden = true;
   securedText.removeAttribute('required');
-  subtitle.textContent = 'Enter your team passphrase — 1Password can autofill this field.';
+  usernameField.hidden = false;
+  subtitle.textContent = 'Use your 1Password Login item — click the icon in the password field or press Ctrl+\\.';
   linkHint.hidden = false;
   secretInput.focus();
 }
