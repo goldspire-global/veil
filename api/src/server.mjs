@@ -17,7 +17,8 @@ import { parseAuthHeaders } from './auth.mjs';
 const apiRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const publicDir = join(apiRoot, 'public');
 const env = loadEnv();
-const port = Number(env.API_PORT) || 3015;
+// Railway (and most PaaS) expose the listening port via PORT.
+const port = Number(process.env.PORT || env.PORT || env.API_PORT) || 3015;
 
 function parseAllowedOrigins() {
   const raw = String(env.CORS_ALLOW_ORIGINS || '').trim();
