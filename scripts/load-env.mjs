@@ -27,8 +27,9 @@ export function parseEnv(text) {
 }
 
 export function loadEnv() {
-  if (!existsSync(envPath)) {
-    throw new Error(`Missing ${envPath} — copy .env.example to .env first.`);
-  }
-  return parseEnv(readFileSync(envPath, 'utf8'));
+  const fromFile = existsSync(envPath)
+    ? parseEnv(readFileSync(envPath, 'utf8'))
+    : {};
+  // Railway / other hosts inject vars into process.env (no .env file on disk).
+  return { ...fromFile, ...process.env };
 }

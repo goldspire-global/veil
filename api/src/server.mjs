@@ -202,8 +202,8 @@ const server = createServer(async (req, res) => {
   }
 });
 
-server.listen(port, () => {
-  console.log(`Goldspire org API listening on http://localhost:${port}`);
+server.listen(port, '0.0.0.0', () => {
+  console.log(`Goldspire org API listening on port ${port}`);
   console.log(`Join portal: http://localhost:${port}/secure-text/join`);
 });
 

@@ -13,7 +13,7 @@ export function databaseUrl() {
   const env = loadEnv();
   const url = env.API_DATABASE_URL || env.DATABASE_URL || env.DIRECT_URL;
   if (!url) {
-    throw new Error('Set DATABASE_URL (runtime) or DIRECT_URL in .env');
+    throw new Error('Set DATABASE_URL (runtime) or DIRECT_URL in the environment');
   }
   // Supabase transaction pooler (:6543) is unreliable with node-pg prepared queries.
   if (url.includes(':6543') && env.DIRECT_URL) {
@@ -26,7 +26,7 @@ export function directUrl() {
   const env = loadEnv();
   const url = env.DIRECT_URL || env.DATABASE_URL;
   if (!url) {
-    throw new Error('Set DIRECT_URL (migrations) or DATABASE_URL in .env');
+    throw new Error('Set DIRECT_URL (migrations) or DATABASE_URL in the environment');
   }
   return url;
 }
