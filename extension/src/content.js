@@ -87,7 +87,7 @@
   }
 
   function getActivePreview() {
-    return GoldspireSelection.getLivePreview() || remoteSelectionPreview || '';
+    return GoldspireSelection.getLivePreview() || '';
   }
 
   function getSelectionSummary() {
@@ -176,7 +176,8 @@
     if (summary?.multi && summary.count > 1) {
       return true;
     }
-    if (!preview || preview.length < 4) return false;
+    if (!preview?.trim()) return false;
+
     const host = location.hostname;
     if (snoozedHosts.has(host)) return false;
     if (Date.now() < pillSnoozedUntil) return false;
@@ -185,13 +186,14 @@
     if (mode === 'quiet') return false;
     if (mode === 'always') return true;
 
-    // Relayed selection from an editor iframe (Jira, etc.)
-    if (isTopFrame && remoteSelectionPreview?.trim() && remoteSelectionInEditable) {
-      return true;
-    }
+    const inCompose = isComposeContext();
 
-    // 'smart': show if in a compose context OR selection looks sensitive
-    return isComposeContext() || isSensitiveSelection(preview);
+    // In compose fields, show the pill for any non-empty highlight (even short tokens).
+    if (inCompose) return true;
+
+    if (preview.length < 4) return false;
+
+    return isSensitiveSelection(preview);
   }
 
   async function loadSnoozedHosts() {
@@ -216,9 +218,21 @@
     } catch { /**/ }
   }
 
+  function showToastTop(message, type = 'info') {
+    if (isTopFrame) {
+      GoldspireSecureUI.showToast(message, type);
+      return;
+    }
+    try {
+      window.top.postMessage({ source: 'goldspire-toast', message, type }, '*');
+    } catch {
+      GoldspireSecureUI.showToast(message, type);
+    }
+  }
+
   function safeToast(message, type = 'info') {
     try {
-      globalThis.GoldspireSecureUI?.showToast?.(message, type);
+      showToastTop(message, type);
     } catch {
       // UI unavailable in this frame.
     }
@@ -751,29 +765,17 @@
     pill.querySelector('.gst-pill-half--quick')?.addEventListener('click', (e) => {
       e.stopPropagation();
       if (!getActivePreview()) return;
-      if (isTopFrame && remoteSelectionToken && !GoldspireSelection.getLivePreview()?.trim()) {
-        forwardToRelayedFrame('SECURE_SELECTION', {});
-        return;
-      }
       runSafe(handleCommand({ type: 'SECURE_SELECTION' }));
     });
 
     pill.querySelector('.gst-pill-half--options')?.addEventListener('click', (e) => {
       e.stopPropagation();
       if (!getActivePreview()) return;
-      if (isTopFrame && remoteSelectionToken && !GoldspireSelection.getLivePreview()?.trim()) {
-        forwardToRelayedFrame('SECURE_WITH_OPTIONS', { showOptions: true });
-        return;
-      }
       runSafe(handleCommand({ type: 'SECURE_WITH_OPTIONS', showOptions: true }));
     });
 
     pill.querySelector('.gst-pill-unlock')?.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (isTopFrame && remoteSelectionToken && !GoldspireSelection.getLivePreview()?.trim()) {
-        forwardToRelayedFrame('UNLOCK_SELECTION', {});
-        return;
-      }
       runSafe(handleCommand({ type: 'UNLOCK_SELECTION' }));
     });
 
@@ -1170,7 +1172,7 @@
     const context = getSelectionContext(message);
     if (!context?.selectedText?.trim()) {
       if (!message.silent) {
-        GoldspireSecureUI.showToast('Highlight text first, then Ctrl+Shift+S or right-click.', 'error');
+        showToastTop('Highlight text first, then Ctrl+Shift+S or right-click.', 'error');
       }
       return { handled: false };
     }
@@ -1493,6 +1495,11 @@
       return;
     }
 
+    if (event.data?.source === 'goldspire-toast' && isTopFrame) {
+      GoldspireSecureUI.showToast(event.data.message || '', event.data.type || 'info');
+      return;
+    }
+
     if (event.data?.source === 'goldspire-prompt-request' && isTopFrame) {
       const { requestId, kind, prompt, title, submitLabel } = event.data;
       const replyTarget = event.source;
@@ -1564,10 +1571,8 @@
     true,
   );
 
-  if (isTopFrame) {
-    ensureSelectionStatus();
-    ensureFloatingButtons();
-  } else {
+  ensureSelectionStatus();
+  if (!isTopFrame) {
     initSelectionRelay();
   }
 

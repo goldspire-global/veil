@@ -129,7 +129,7 @@
     const href = buildUnlockHref(fullMarker, unlockBaseUrl);
     if (!href) return escapeHtmlAttr(LABEL);
     const attr = escapeHtmlAttr(markerToAttr(fullMarker));
-    return `<a href="${escapeHtmlAttr(href)}" target="_blank" rel="noopener noreferrer" data-gs="${attr}">${LABEL}</a>&nbsp;`;
+    return `<a href="${escapeHtmlAttr(href)}" class="gst-redacted" target="_blank" rel="noopener noreferrer" data-gs="${attr}">${LABEL}</a>&nbsp;`;
   }
 
   function findComposeRoot(context) {
@@ -152,11 +152,13 @@
 
   function findInsertedLink(root, unlockBaseUrl) {
     if (!root) return null;
-    const links = Array.from(root.querySelectorAll('a'));
+    const scope = root.querySelectorAll ? root : document;
+    const links = Array.from(scope.querySelectorAll?.('a[data-gs], a.gst-redacted, a') || []);
     for (let i = links.length - 1; i >= 0; i -= 1) {
       const link = links[i];
       const text = (link.textContent || '').trim();
       if (text !== LABEL) continue;
+      if (link.getAttribute('data-gs')) return link;
       const href = link.getAttribute('href') || link.href || '';
       if (href.includes('#') || href.startsWith('http')) return link;
       if (unlockBaseUrl && href) return link;
@@ -178,8 +180,8 @@
     }
   }
 
-  async function insertRichRedacted(resolved, fullMarker, settings) {
-    const unlockBaseUrl = getUnlockBaseUrl(settings, { forEmail: true });
+  async function insertRichRedacted(resolved, fullMarker, settings, { forEmail = false } = {}) {
+    const unlockBaseUrl = getUnlockBaseUrl(settings, { forEmail });
     const href = buildUnlockHref(fullMarker, unlockBaseUrl);
 
     const range = resolved.range.cloneRange();
@@ -190,28 +192,32 @@
     if (editableRoot) editableRoot.focus();
 
     range.deleteContents();
-    selection.removeAllRanges();
-    selection.addRange(range);
+    selection?.removeAllRanges?.();
+    selection?.addRange?.(range);
 
-    let inserted = false;
+    const findLink = () => findInsertedLink(editableRoot || document.body, unlockBaseUrl);
+
+    let linkNode = null;
+
     if (document.queryCommandSupported?.('insertHTML')) {
-      inserted = document.execCommand('insertHTML', false, html);
+      document.execCommand('insertHTML', false, html);
+      linkNode = findLink();
     }
 
-    if (!inserted) {
-      inserted = await pasteHtmlAtSelection(html, LABEL);
+    if (!linkNode) {
+      const pasted = await pasteHtmlAtSelection(html, LABEL);
+      if (pasted) linkNode = findLink();
     }
 
-    if (!inserted) {
+    if (!linkNode) {
       const link = createLink(fullMarker, unlockBaseUrl);
       range.insertNode(link);
       link.after(document.createTextNode('\u00A0'));
-      inserted = Boolean(link.isConnected);
+      linkNode = link.isConnected ? link : null;
     }
 
     notifyRichEditor(editableRoot);
 
-    const linkNode = findInsertedLink(editableRoot || range.commonAncestorContainer?.parentElement, unlockBaseUrl);
     return {
       kind: 'token',
       node: linkNode,
@@ -315,12 +321,17 @@
     return global.GoldspireEditorHost?.isEmailHost?.() || false;
   }
 
+  function isRichComposeContext(context) {
+    if (isRichEmailContext(context)) return true;
+    return Boolean(global.GoldspireEditorHost?.prefersRichLinkInsertion?.(context));
+  }
+
   function prefersPlainRedacted(context) {
+    if (context?.kind === 'input') return true;
+    if (isRichComposeContext(context)) return false;
     if (global.GoldspireEditorHost?.prefersPlainInsertion) {
-      if (isEmailCompose() && isRichEmailContext(context)) return false;
       return global.GoldspireEditorHost.prefersPlainInsertion(context);
     }
-    if (context?.kind === 'input') return true;
     return !isEmailCompose();
   }
 
@@ -390,7 +401,11 @@
     }
 
     if (isRichEmailContext(resolved)) {
-      return insertRichRedacted(resolved, fullMarker, settings);
+      return insertRichRedacted(resolved, fullMarker, settings, { forEmail: true });
+    }
+
+    if (isRichComposeContext(resolved)) {
+      return insertRichRedacted(resolved, fullMarker, settings, { forEmail: false });
     }
 
     if (prefersPlainRedacted(resolved)) {
@@ -435,6 +450,7 @@
     isRedactedToken,
     isEmailCompose,
     isRichEmailContext,
+    isRichComposeContext,
     prefersPlainRedacted,
     resolveSelection,
     insertRedacted,

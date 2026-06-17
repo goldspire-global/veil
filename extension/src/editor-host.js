@@ -14,6 +14,9 @@
     '[data-slate-editor]',
     '.tiptap',
     '.ProseMirror-focused',
+    '.ak-editor-content-area',
+    '.wiki-edit',
+    '[data-testid*="rich-text"]',
     '[role="textbox"][contenteditable]',
     '[contenteditable="true"]',
     '[contenteditable=""]',
@@ -116,11 +119,25 @@
 
   function prefersPlainInsertion(context) {
     if (context?.kind === 'input') return true;
-    if (isEmailHost()) return false;
     const root = findComposeRoot(context);
-    if (!root) return true;
     if (isCodeEditor(root)) return true;
+    // Contenteditable / rich editors get hyperlinks, not plain tokens.
+    if (context?.kind === 'range' || context?.kind === 'multi-range') return false;
     return true;
+  }
+
+  function prefersRichLinkInsertion(context) {
+    if (context?.kind === 'input') return false;
+    if (context?.kind !== 'range' && context?.kind !== 'multi-range') return false;
+    const root = findComposeRoot(context);
+    if (!root) return false;
+    if (isCodeEditor(root)) return false;
+    return (
+      root.isContentEditable
+      || root.getAttribute?.('contenteditable') != null
+      || root.getAttribute?.('role') === 'textbox'
+      || isStructuredEditor(root)
+    );
   }
 
   function notifyEditor(root) {
@@ -231,6 +248,7 @@
     closestEditable,
     findComposeRoot,
     prefersPlainInsertion,
+    prefersRichLinkInsertion,
     isStructuredEditor,
     isCodeEditor,
     isEmailHost,

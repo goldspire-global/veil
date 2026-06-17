@@ -90,7 +90,8 @@
     query('a:not([data-gst-wired])').forEach((link) => {
       const text = (link.textContent || '').trim();
       if (text !== GoldspireRedacted.LABEL) return;
-      const marker = GoldspireRedacted.markerFromHref(link.href);
+      const marker = GoldspireRedacted.markerFromHref(link.href)
+        || GoldspireRedacted.markerFromElement(link);
       if (marker) wireLink(link, marker, onUnlock);
     });
 
