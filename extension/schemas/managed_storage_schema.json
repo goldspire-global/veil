@@ -42,6 +42,22 @@
       "description": "Default protection when securing text.",
       "type": "string",
       "enum": ["team", "one-time"]
+    },
+    "copilotEnabled": {
+      "title": "Veil security copilot",
+      "description": "Enable Veil copilot prompts for sensitive data.",
+      "type": "boolean"
+    },
+    "dlpMode": {
+      "title": "DLP mode",
+      "description": "Browser DLP enforcement level for managed devices.",
+      "type": "string",
+      "enum": ["off", "observe", "enforce"]
+    },
+    "orgTeamId": {
+      "title": "Organization team ID",
+      "description": "Optional team id for per-team DLP policy overlay.",
+      "type": "string"
     }
   }
 }

@@ -28,6 +28,14 @@ import {
   deactivateMember,
   addOrgMember,
 } from './admin-service.mjs';
+import { ingestExtensionEvents, getSecurityEventSummary, exportSecurityEvents } from './events-service.mjs';
+import { createSecureToken, resolveSecureToken } from './token-service.mjs';
+import {
+  listTeams,
+  createTeam,
+  updateTeam,
+  assignMemberTeam,
+} from './teams-service.mjs';
 
 const apiRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const publicDir = join(apiRoot, 'public');
@@ -211,6 +219,36 @@ const server = createServer(async (req, res) => {
       return;
     }
 
+    if (req.method === 'POST' && pathname === '/v1/extension/events') {
+      if (!String(req.headers['content-type'] || '').includes('application/json')) {
+        throw httpError(415, 'Content-Type must be application/json.');
+      }
+      const { token, deviceId } = parseAuthHeaders(req);
+      const body = await readBody(req);
+      const result = await ingestExtensionEvents(token, deviceId, body);
+      json(res, req, 200, result);
+      return;
+    }
+
+    if (req.method === 'POST' && pathname === '/v1/extension/tokens') {
+      if (!String(req.headers['content-type'] || '').includes('application/json')) {
+        throw httpError(415, 'Content-Type must be application/json.');
+      }
+      const { token, deviceId } = parseAuthHeaders(req);
+      const body = await readBody(req);
+      const result = await createSecureToken(token, deviceId, body);
+      json(res, req, 201, result);
+      return;
+    }
+
+    const tokenResolveMatch = pathname.match(/^\/v1\/extension\/tokens\/([^/]+)$/);
+    if (req.method === 'GET' && tokenResolveMatch) {
+      const { token, deviceId } = parseAuthHeaders(req);
+      const result = await resolveSecureToken(token, deviceId, decodeURIComponent(tokenResolveMatch[1]));
+      json(res, req, 200, result);
+      return;
+    }
+
     // --- Organization admin (self-serve console) ---
 
     if (req.method === 'POST' && pathname === '/v1/orgs') {
@@ -285,6 +323,49 @@ const server = createServer(async (req, res) => {
       if (req.method === 'POST' && revokeMatch) {
         const deviceId = decodeURIComponent(revokeMatch[1]);
         json(res, req, 200, await revokeDevice(admin, deviceId));
+        return;
+      }
+
+      if (req.method === 'GET' && pathname === '/v1/orgs/me/security-events/summary') {
+        const days = url.searchParams.get('days') || '30';
+        json(res, req, 200, await getSecurityEventSummary(admin, { days }));
+        return;
+      }
+
+      if (req.method === 'GET' && pathname === '/v1/orgs/me/security-events/export') {
+        const days = url.searchParams.get('days') || '30';
+        const format = url.searchParams.get('format') || 'json';
+        const exported = await exportSecurityEvents(admin, { days, format });
+        if (exported.format === 'csv') {
+          text(res, req, 200, exported.content, 'text/csv; charset=utf-8');
+          return;
+        }
+        json(res, req, 200, exported);
+        return;
+      }
+
+      if (req.method === 'GET' && pathname === '/v1/orgs/me/teams') {
+        json(res, req, 200, await listTeams(admin));
+        return;
+      }
+
+      if (req.method === 'POST' && pathname === '/v1/orgs/me/teams') {
+        const body = await readBody(req);
+        json(res, req, 201, await createTeam(admin, body));
+        return;
+      }
+
+      const teamMatch = pathname.match(/^\/v1\/orgs\/me\/teams\/([^/]+)$/);
+      if (req.method === 'PATCH' && teamMatch) {
+        const body = await readBody(req);
+        const teamId = decodeURIComponent(teamMatch[1]);
+        json(res, req, 200, await updateTeam(admin, teamId, body));
+        return;
+      }
+
+      if (req.method === 'POST' && pathname === '/v1/orgs/me/teams/assign') {
+        const body = await readBody(req);
+        json(res, req, 200, await assignMemberTeam(admin, body));
         return;
       }
     }

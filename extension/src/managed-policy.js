@@ -5,6 +5,7 @@
   const MANAGED_SETTING_KEYS = [
     'orgId',
     'orgDisplayName',
+    'orgTeamId',
     'securityProfile',
     'passphraseFromVault',
     'useSavedPassphrase',
@@ -12,6 +13,8 @@
     'defaultSecureMode',
     'enforceStrongPassphrase',
     'resecureDelaySeconds',
+    'copilotEnabled',
+    'dlpMode',
   ];
 
   const LEGACY_MANAGED_KEYS = ['passphraseIn1Password'];

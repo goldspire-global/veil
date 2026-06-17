@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Goldspire Secure Text</title>
+    <title>Veil</title>
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
@@ -79,7 +79,8 @@
           <div class="popup__logo">🔒</div>
           <div class="popup__header-text">
             <div class="popup__title-row">
-              <h1>Secure Text</h1>
+              <h1>Veil</h1>
+              <span class="popup__byline">by Goldspire</span>
               <span id="profile-chip" class="profile-chip"></span>
             </div>
             <p>Highlight text, secure it, send as normal. Recipients click to unlock.</p>
@@ -252,6 +253,22 @@
                     <input id="publicUnlockUrl" name="publicUnlockUrl" type="url" placeholder="Leave blank for default" />
                   </label>
                 </div>
+                <details class="card card--collapsible card--nested">
+                  <summary>Veil security copilot (preview)</summary>
+                  <p class="hint">Early access. Off by default — enable to test upcoming detection features.</p>
+                  <label class="checkbox">
+                    <input id="copilotEnabled" name="copilotEnabled" type="checkbox" />
+                    <span>Enable Veil copilot</span>
+                  </label>
+                  <label class="field">
+                    <span>DLP mode</span>
+                    <select id="dlpMode" name="dlpMode">
+                      <option value="off">Off</option>
+                      <option value="observe">Observe only (log locally)</option>
+                      <option value="enforce">Enforce (when policies ship)</option>
+                    </select>
+                  </label>
+                </details>
               </div>
             </details>
 

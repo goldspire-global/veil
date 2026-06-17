@@ -10,6 +10,17 @@
     }
     delete next.passphraseIn1Password;
 
+    if (next.copilotEnabled !== undefined) {
+      next.copilotEnabled = next.copilotEnabled === true;
+    }
+    if (next.dlpMode !== undefined) {
+      const mode = String(next.dlpMode).toLowerCase();
+      next.dlpMode = ['off', 'observe', 'enforce'].includes(mode) ? mode : 'off';
+    }
+    if (next.dlpPolicy != null && typeof next.dlpPolicy === 'object') {
+      next.dlpPolicy = global.GoldspireDlpSchema?.normalizePolicy?.(next.dlpPolicy) || next.dlpPolicy;
+    }
+
     return next;
   }
 

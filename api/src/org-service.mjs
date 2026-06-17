@@ -2,20 +2,15 @@ import { randomBytes } from 'node:crypto';
 import { getPool } from './db.mjs';
 import { assertMemberEmailAllowed } from './membership.mjs';
 import { normalizeEmail } from './auth.mjs';
+import { getMemberTeamPolicy } from './teams-service.mjs';
 
 function newProvisionToken() {
   return randomBytes(32).toString('hex');
 }
 
-function orgPayload(org, provisionToken) {
+function orgPayload(org, provisionToken, teamContext = null) {
   const settings = typeof org.settings === 'object' && org.settings ? org.settings : {};
-  return {
-    orgId: org.id,
-    orgDisplayName: org.display_name,
-    teamPassphrase: org.team_passphrase,
-    policyVersion: org.policy_version,
-    provisionToken,
-    settings: {
+  const baseSettings = {
     passphraseFromVault: settings.passphraseFromVault === true,
     useSavedPassphrase: settings.useSavedPassphrase !== false,
     defaultSecureMode: settings.defaultSecureMode === 'one-time' ? 'one-time' : 'team',
@@ -26,10 +21,30 @@ function orgPayload(org, provisionToken) {
     allowedEmailDomains: Array.isArray(settings.allowedEmailDomains)
       ? settings.allowedEmailDomains
       : [],
-      ...(settings.resecureDelaySeconds != null
-        ? { resecureDelaySeconds: settings.resecureDelaySeconds }
-        : {}),
-    },
+    ...(settings.resecureDelaySeconds != null
+      ? { resecureDelaySeconds: settings.resecureDelaySeconds }
+      : {}),
+    ...(settings.dlp && typeof settings.dlp === 'object' ? { dlp: settings.dlp } : {}),
+    ...(settings.analytics && typeof settings.analytics === 'object'
+      ? { analytics: { siemWebhookConfigured: Boolean(settings.analytics.siemWebhookUrl) } }
+      : {}),
+  };
+
+  if (teamContext?.teamId) {
+    baseSettings.teamId = teamContext.teamId;
+    baseSettings.teamName = teamContext.teamName;
+    if (teamContext.settings?.dlp && typeof teamContext.settings.dlp === 'object') {
+      baseSettings.teamDlp = teamContext.settings.dlp;
+    }
+  }
+
+  return {
+    orgId: org.id,
+    orgDisplayName: org.display_name,
+    teamPassphrase: org.team_passphrase,
+    policyVersion: org.policy_version,
+    provisionToken,
+    settings: baseSettings,
   };
 }
 
@@ -85,7 +100,8 @@ export async function joinWithCode(joinCode, deviceId, email) {
   );
 
   const provisionToken = provisionResult.rows[0].provision_token;
-  return orgPayload(org, provisionToken);
+  const teamContext = await getMemberTeamPolicy(org.id, memberEmail);
+  return orgPayload(org, provisionToken, teamContext);
 }
 
 export async function syncPolicy(token, deviceId, clientPolicyVersion) {
@@ -125,9 +141,20 @@ export async function syncPolicy(token, deviceId, clientPolicyVersion) {
     [row.policy_version, bearer],
   );
 
+  const memberResult = await pool.query(
+    `SELECT email FROM org_members
+     WHERE org_id = $1 AND device_id = $2 AND active = true
+     LIMIT 1`,
+    [row.id, device],
+  );
+  const teamContext = await getMemberTeamPolicy(
+    row.id,
+    memberResult.rows[0]?.email || null,
+  );
+
   return {
     unchanged: false,
-    payload: orgPayload(row, bearer),
+    payload: orgPayload(row, bearer, teamContext),
   };
 }
 

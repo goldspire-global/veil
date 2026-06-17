@@ -29,7 +29,29 @@
     orgProvisionSource: '',
     orgPolicyVersion: 0,
     orgMemberEmail: '',
+    orgTeamId: '',
+    orgTeamName: '',
+    teamDlpPolicy: null,
+    /** Veil copilot — off by default until Sprint 2+. */
+    copilotEnabled: false,
+    /** DLP mode: off | observe | enforce */
+    dlpMode: 'off',
+    /** Org-synced DLP policy (organizations.settings.dlp) */
+    dlpPolicy: null,
   };
+
+  const DLP_MODES = new Set(['off', 'observe', 'enforce']);
+
+  function normalizeDlpMode(value) {
+    const mode = String(value || 'off').toLowerCase();
+    return DLP_MODES.has(mode) ? mode : 'off';
+  }
+
+  function isVeilActive(settings) {
+    if (!settings) return false;
+    if (settings.copilotEnabled === true) return true;
+    return normalizeDlpMode(settings.dlpMode) !== 'off';
+  }
 
   function migrate(settings) {
     return global.GoldspireSettingsMigrate?.migrateSettings?.(settings) || settings;
@@ -63,5 +85,12 @@
     }
   }
 
-  global.GoldspireSettings = { DEFAULT_SETTINGS, load, migrate };
+  global.GoldspireSettings = {
+    DEFAULT_SETTINGS,
+    DLP_MODES,
+    normalizeDlpMode,
+    isVeilActive,
+    load,
+    migrate,
+  };
 })(typeof globalThis !== 'undefined' ? globalThis : self);

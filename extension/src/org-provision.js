@@ -61,6 +61,7 @@
 
   function normalizePolicyPayload(payload = {}) {
     const settings = payload.settings && typeof payload.settings === 'object' ? payload.settings : {};
+    const dlpRaw = settings.dlp && typeof settings.dlp === 'object' ? settings.dlp : null;
     return {
       orgId: String(payload.orgId || settings.orgId || '').trim(),
       orgDisplayName: String(payload.orgDisplayName || settings.orgDisplayName || '').trim(),
@@ -72,6 +73,10 @@
       defaultSecureMode: settings.defaultSecureMode === 'one-time' ? 'one-time' : 'team',
       enforceStrongPassphrase: settings.enforceStrongPassphrase !== false,
       resecureDelaySeconds: settings.resecureDelaySeconds,
+      dlpPolicy: dlpRaw,
+      teamId: String(settings.teamId || '').trim(),
+      teamName: String(settings.teamName || '').trim(),
+      teamDlp: settings.teamDlp && typeof settings.teamDlp === 'object' ? settings.teamDlp : null,
     };
   }
 
@@ -108,6 +113,21 @@
 
     if (payload.resecureDelaySeconds != null) {
       patch.resecureDelaySeconds = payload.resecureDelaySeconds;
+    }
+
+    if (payload.dlpPolicy) {
+      patch.dlpPolicy = global.GoldspireDlpSchema?.normalizePolicy?.(payload.dlpPolicy) || payload.dlpPolicy;
+      if (patch.dlpPolicy.enabled) {
+        patch.dlpMode = 'enforce';
+      }
+    }
+
+    if (payload.teamId) {
+      patch.orgTeamId = payload.teamId;
+      patch.orgTeamName = payload.teamName || '';
+    }
+    if (payload.teamDlp) {
+      patch.teamDlpPolicy = global.GoldspireDlpSchema?.normalizePolicy?.(payload.teamDlp) || payload.teamDlp;
     }
 
     if (payload.provisionToken) {

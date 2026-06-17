@@ -1,13 +1,15 @@
-importScripts('constants.js', 'browser.js', 'crypto.js', 'marker.js', 'editor-host.js', 'redacted.js', 'secrets.js', 'settings-migrate.js', 'settings.js', 'managed-policy.js', 'share-keys.js', 'org-provision.js', 'org-share.js');
+importScripts('constants.js', 'browser.js', 'crypto.js', 'marker.js', 'editor-host.js', 'redacted.js', 'secrets.js', 'settings-migrate.js', 'settings.js', 'managed-policy.js', 'share-keys.js', 'org-provision.js', 'org-share.js', 'events/bus.js', 'events/ingest.js', 'tokens/format.js');
 
 const MENU_ROOT = 'goldspire-root';
 const MENU_SECURE = 'goldspire-secure-selection';
 const MENU_SECURE_OPTIONS = 'goldspire-secure-options';
 const MENU_UNLOCK = 'goldspire-unlock-selection';
+const MENU_RESOLVE_VEIL = 'goldspire-resolve-veil-token';
 const MENU_GENERATE_SECURE = 'goldspire-generate-secure-password';
 
 const CONTENT_FILES = [
   'src/constants.js',
+  'src/product.js',
   'src/passphrase-policy.js',
   'src/burn-list.js',
   'src/audit.js',
@@ -19,14 +21,54 @@ const CONTENT_FILES = [
   'src/password.js',
   'src/selection.js',
   'src/secrets.js',
+  'src/policy/schema.js',
   'src/settings-migrate.js',
   'src/settings.js',
   'src/resecure.js',
   'src/ui.js',
   'src/detector.js',
+  'src/detection/context.js',
+  'src/detection/compliance.js',
+  'src/detection/scoring.js',
+  'src/detection/engine.js',
+  'src/detection/lib-bundle.js',
+  'src/detection/detectors/credit-card.js',
+  'src/detection/detectors/jwt.js',
+  'src/detection/detectors/api-key.js',
+  'src/detection/detectors/email.js',
+  'src/detection/detectors/phone.js',
+  'src/detection/detectors/password.js',
+  'src/detection/detectors/extended.js',
+  'src/detection/bootstrap.js',
+  'src/policy/engine.js',
+  'src/events/bus.js',
+  'src/tokens/format.js',
+  'src/tokens/api.js',
+  'src/tokens/client.js',
+  'src/tokens/detector.js',
+  'src/actions/mask-text.js',
+  'src/actions/registry.js',
+  'src/actions/runner.js',
+  'src/observe/context.js',
+  'src/observe/paste-insert.js',
+  'src/copilot/snooze.js',
+  'src/copilot/prompt.js',
+  'src/copilot/controller.js',
+  'src/copilot/selection.js',
+  'src/ai/framework.js',
+  'src/ai/intercept.js',
+  'src/ai/chatgpt.js',
+  'src/ai/claude.js',
+  'src/ai/gemini.js',
+  'src/ai/copilot.js',
+  'src/ai/perplexity.js',
+  'src/ai/bootstrap.js',
+  'src/observe/paste-observe.js',
   'src/content.js',
   'src/unlock-host.js',
 ];
+
+const MENU_LOG = 'Veil';
 
 const api = GoldspireBrowser.api;
 
@@ -34,7 +76,7 @@ async function applyEnterprisePolicy() {
   try {
     await GoldspireManagedPolicy.applyManagedPolicy();
   } catch (error) {
-    console.warn('Goldspire Secure Text: managed policy apply failed', error);
+    console.warn(`${MENU_LOG}: managed policy apply failed`, error);
   }
 }
 
@@ -42,7 +84,7 @@ async function syncCloudOrgPolicy() {
   try {
     await GoldspireOrgProvision.syncOrgPolicy();
   } catch (error) {
-    console.warn('Goldspire Secure Text: cloud org sync failed', error);
+    console.warn(`${MENU_LOG}: cloud org sync failed`, error);
   }
 }
 
@@ -53,7 +95,15 @@ async function syncCloudOrgShares() {
     }
     await GoldspireOrgShare.syncPendingShares();
   } catch (error) {
-    console.warn('Goldspire Secure Text: share inbox sync failed', error);
+    console.warn(`${MENU_LOG}: share inbox sync failed`, error);
+  }
+}
+
+async function uploadVeilSecurityEvents() {
+  try {
+    await GoldspireVeilIngest?.uploadPendingEvents?.();
+  } catch (error) {
+    console.warn(`${MENU_LOG}: veil event upload failed`, error);
   }
 }
 
@@ -61,23 +111,31 @@ function scheduleOrgSyncAlarm() {
   const minutes = GoldspireConstants.ORG_SYNC_INTERVAL_MINUTES || 360;
   if (!api.alarms?.create) return;
   api.alarms.create('goldspire-org-sync', { periodInMinutes: minutes });
+  api.alarms.create('goldspire-veil-events', { periodInMinutes: 15 });
 }
 
 async function bootstrapPolicies() {
   await applyEnterprisePolicy();
   await syncCloudOrgPolicy();
   await syncCloudOrgShares();
+  await uploadVeilSecurityEvents();
+}
+
+function isVeilTokenText(text) {
+  return Boolean(GoldspireVeilTokenFormat?.isVeilToken?.(text));
 }
 
 function updateContextMenus({ selectedText = '', editable = false } = {}) {
   const selected = String(selectedText || '').trim();
   const hasSelection = selected.length > 0;
   const isRedacted = hasSelection && GoldspireRedacted.isRedactedToken(selected);
+  const isVeilToken = hasSelection && isVeilTokenText(selected);
 
   const updates = [
-    [MENU_SECURE, { visible: hasSelection && !isRedacted }],
-    [MENU_SECURE_OPTIONS, { visible: hasSelection && !isRedacted }],
+    [MENU_SECURE, { visible: hasSelection && !isRedacted && !isVeilToken }],
+    [MENU_SECURE_OPTIONS, { visible: hasSelection && !isRedacted && !isVeilToken }],
     [MENU_UNLOCK, { visible: isRedacted }],
+    [MENU_RESOLVE_VEIL, { visible: isVeilToken }],
     // Caret in a field, no highlight — generate & secure at cursor.
     [MENU_GENERATE_SECURE, { visible: editable && !hasSelection }],
   ];
@@ -88,7 +146,7 @@ function updateContextMenus({ selectedText = '', editable = false } = {}) {
         new Promise((resolve) => {
           api.contextMenus.update(id, props, () => {
             if (api.runtime.lastError) {
-              console.warn('Goldspire Secure Text: menu update failed', api.runtime.lastError);
+              console.warn(`${MENU_LOG}: menu update failed`, api.runtime.lastError);
             }
             resolve();
           });
@@ -119,12 +177,12 @@ async function resolveMenuContext(info, tab) {
 function createMenus() {
   api.contextMenus.removeAll(() => {
     if (api.runtime.lastError) {
-      console.warn('Goldspire Secure Text: context menu reset failed', api.runtime.lastError);
+      console.warn(`${MENU_LOG}: context menu reset failed`, api.runtime.lastError);
     }
 
     api.contextMenus.create({
       id: MENU_ROOT,
-      title: 'Goldspire Secure Text',
+      title: 'Veil',
       // Always show so users can generate & secure at caret.
       contexts: ['all'],
     });
@@ -151,6 +209,13 @@ function createMenus() {
     });
 
     api.contextMenus.create({
+      id: MENU_RESOLVE_VEIL,
+      parentId: MENU_ROOT,
+      title: 'Reveal Veil token',
+      contexts: ['selection'],
+    });
+
+    api.contextMenus.create({
       id: MENU_GENERATE_SECURE,
       parentId: MENU_ROOT,
       title: 'Generate & secure password',
@@ -166,7 +231,7 @@ async function ensureContentScript(tabId) {
       files: CONTENT_FILES,
     });
   } catch (error) {
-    console.warn('Goldspire Secure Text: could not inject content script', error);
+    console.warn(`${MENU_LOG}: could not inject content script`, error);
   }
 }
 
@@ -289,6 +354,9 @@ if (api.alarms?.onAlarm) {
       syncCloudOrgPolicy();
       syncCloudOrgShares();
     }
+    if (alarm.name === 'goldspire-veil-events') {
+      uploadVeilSecurityEvents();
+    }
   });
 }
 
@@ -319,6 +387,10 @@ api.contextMenus.onClicked.addListener((info, tab) => {
 
   if (info.menuItemId === MENU_UNLOCK) {
     sendToActiveTab('UNLOCK_SELECTION', { selectionText }, frameId);
+  }
+
+  if (info.menuItemId === MENU_RESOLVE_VEIL) {
+    sendToActiveTab('RESOLVE_VEIL_TOKEN', { selectionText }, frameId);
   }
 
   if (info.menuItemId === MENU_GENERATE_SECURE) {

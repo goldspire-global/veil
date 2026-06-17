@@ -43,6 +43,13 @@ function defaultSettings(overrides = {}) {
     enforceStrongPassphrase: true,
     membershipPolicy: 'invite',
     allowedEmailDomains: [],
+    dlp: {
+      version: 1,
+      enabled: false,
+      defaultAction: 'warn',
+      categories: {},
+      aiSurfaces: { defaultAction: 'block', categories: {} },
+    },
     ...overrides,
   };
 }
@@ -62,6 +69,17 @@ function publicSettings(settings) {
       : [],
     ...(parsed.resecureDelaySeconds != null
       ? { resecureDelaySeconds: parsed.resecureDelaySeconds }
+      : {}),
+    ...(parsed.dlp && typeof parsed.dlp === 'object'
+      ? { dlp: parsed.dlp }
+      : {}),
+    ...(parsed.analytics && typeof parsed.analytics === 'object'
+      ? {
+        analytics: {
+          siemWebhookUrl: String(parsed.analytics.siemWebhookUrl || ''),
+          siemWebhookConfigured: Boolean(parsed.analytics.siemWebhookUrl),
+        },
+      }
       : {}),
   };
 }
@@ -218,6 +236,15 @@ export async function updateOrganization(admin, body = {}) {
       ? admin.org.settings
       : {};
     const merged = { ...current, ...body.settings };
+    if (body.settings.analytics && typeof body.settings.analytics === 'object') {
+      const prevAnalytics = current.analytics && typeof current.analytics === 'object'
+        ? current.analytics
+        : {};
+      merged.analytics = { ...prevAnalytics, ...body.settings.analytics };
+      if (!body.settings.analytics.siemWebhookSecret) {
+        merged.analytics.siemWebhookSecret = prevAnalytics.siemWebhookSecret;
+      }
+    }
     if (merged.membershipPolicy && !MEMBERSHIP_POLICIES.has(merged.membershipPolicy)) {
       throw httpError(400, 'membershipPolicy must be open, invite, or domain.');
     }
@@ -299,10 +326,12 @@ export async function setJoinCodeActive(admin, code, active) {
 export async function listMembersAdmin(admin) {
   const pool = getPool();
   const result = await pool.query(
-    `SELECT email, display_name, device_id IS NOT NULL AS registered, active, created_at, updated_at
-     FROM org_members
-     WHERE org_id = $1
-     ORDER BY email`,
+    `SELECT m.email, m.display_name, m.device_id IS NOT NULL AS registered, m.active,
+            m.created_at, m.updated_at, m.team_id, t.name AS team_name
+     FROM org_members m
+     LEFT JOIN org_teams t ON t.id = m.team_id
+     WHERE m.org_id = $1
+     ORDER BY m.email`,
     [admin.org.id],
   );
 
@@ -312,6 +341,8 @@ export async function listMembersAdmin(admin) {
       displayName: row.display_name,
       registered: row.registered,
       active: row.active,
+      teamId: row.team_id || null,
+      teamName: row.team_name || null,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     })),

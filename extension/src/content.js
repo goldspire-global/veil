@@ -8,6 +8,7 @@
   const isInvalidatedError = (error) => browserApi()?.isInvalidatedError?.(error) ?? false;
 
   let detectorController = null;
+  let veilTokenDetector = null;
   let contextDead = false;
   let staleWarningShown = false;
 
@@ -80,6 +81,12 @@
   const frameToken = Math.random().toString(36).slice(2);
   let lastContextMenuTarget = null;
 
+  function isHostSnoozed(host) {
+    if (!host) return false;
+    if (snoozedHosts.has(host)) return true;
+    return globalThis.GoldspireVeilSnooze?.isSnoozed?.(host) === true;
+  }
+
   function elementIsEditable(target) {
     if (!target) return false;
     const el = target instanceof Element ? target : target.parentElement;
@@ -141,21 +148,23 @@
   }
 
   function isSensitiveSelection(text) {
+    const active = document.activeElement;
+    const context = {
+      source: 'selection',
+      isPasswordField: active instanceof HTMLInputElement && active.type === 'password',
+      fieldType: active instanceof HTMLInputElement ? active.type : '',
+      isEmailField: active instanceof HTMLInputElement && active.type === 'email',
+      isPhoneField: active instanceof HTMLInputElement && active.type === 'tel',
+    };
+
+    if (globalThis.GoldspireDetectionLib?.isSensitiveSelectionText) {
+      return globalThis.GoldspireDetectionLib.isSensitiveSelectionText(text, context);
+    }
     if (!text || text.length < 4) return false;
-    return (
-      // Long enough to be a credential
-      text.length >= 8 ||
-      // Looks like an API key / token (contains letters+digits+special, no spaces)
-      /^[A-Za-z0-9_\-./+]{8,}$/.test(text.trim()) ||
-      // JWT (three base64url segments)
-      /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(text.trim()) ||
-      // Looks like sk-…, ghp_…, xox…, AIza… common API key prefixes
-      /^(sk-|ghp_|ghs_|glpat-|xox[abprs]-|AIza|AKIA|ya29\.|ey[JI])/i.test(text.trim()) ||
-      // Basic credit card pattern (16 digits optionally grouped)
-      /^\d{4}[\s\-]?\d{4}[\s\-]?\d{4}[\s\-]?\d{4}$/.test(text.trim()) ||
-      // Password-like: mixed case + digit + symbol, no spaces
-      /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)[^\s]{8,}$/.test(text.trim())
-    );
+    const trimmed = text.trim();
+    const results = globalThis.GoldspireDetection?.analyze?.(trimmed, context) || [];
+    if (results.some((hit) => hit.confidence >= 50)) return true;
+    return trimmed.length >= 8;
   }
 
   function isComposeContext() {
@@ -191,7 +200,7 @@
     if (!preview?.trim()) return false;
 
     const host = location.hostname;
-    if (snoozedHosts.has(host)) return false;
+    if (isHostSnoozed(host)) return false;
     if (Date.now() < pillSnoozedUntil) return false;
 
     const mode = settings?.selectionUiMode || 'smart';
@@ -221,6 +230,7 @@
     const host = location.hostname;
     if (!host) return;
     snoozedHosts.add(host);
+    await globalThis.GoldspireVeilSnooze?.snoozeHost?.(host);
     try {
       const gst = browserApi();
       if (!gst?.storageGet) return;
@@ -274,7 +284,7 @@
         warnStaleContext();
         return;
       }
-      console.warn('[Goldspire Secure Text]', error);
+      console.warn('[Veil]', error);
       safeToast('Something went wrong — refresh the page and try again.', 'error');
     });
   }
@@ -339,6 +349,24 @@
     if (seconds > 0) {
       window.setTimeout(() => navigator.clipboard.writeText('').catch(() => {}), seconds * 1000);
     }
+  }
+
+  async function copySecureText(text, settings, options = {}) {
+    const profile = getProfile(settings);
+    let unlockSecret = options.unlockSecret || '';
+    if (!unlockSecret) {
+      unlockSecret = await resolveTeamPassphrase(settings);
+    }
+    if (!unlockSecret) return { ok: false, error: 'no_passphrase' };
+
+    const payload = await GoldspireSecureCrypto.encryptText(text, unlockSecret, {
+      mode: options.mode || 'team',
+      profile,
+    });
+    const fullMarker = GoldspireSecureMarker.wrapSecured(payload, '', '1');
+    await copyWithAutoClear(fullMarker, settings);
+    GoldspireSecrets.clearMemoryString(unlockSecret);
+    return { ok: true, marker: fullMarker };
   }
 
   function resolveContext(context) {
@@ -459,6 +487,94 @@
     return replaceSelection(context, context.selectedText.replace(GoldspireRedacted.LABEL, plaintext));
   }
 
+  function replaceVeilPlaceholder(context, placeholder, plaintext) {
+    if (context?.kind === 'input') {
+      const { element } = context;
+      const start = element.value.indexOf(placeholder);
+      if (start === -1) throw new Error('Could not find Veil token in this field.');
+      element.value = `${element.value.slice(0, start)}${plaintext}${element.value.slice(start + placeholder.length)}`;
+      element.focus();
+      element.setSelectionRange(start, start + plaintext.length);
+      element.dispatchEvent(new Event('input', { bubbles: true }));
+      return { kind: 'input', element, start, plaintext };
+    }
+
+    return replaceSelection(context, context.selectedText.replace(placeholder, plaintext));
+  }
+
+  async function resolveVeilTokenId(tokenId, options = {}) {
+    if (!ensureExtensionReady()) return { ok: false };
+
+    const settings = await getSettings();
+    if (!(await globalThis.GoldspireVeilTokens?.canUseTokens?.(settings))) {
+      GoldspireSecureUI.showToast('Join your team to reveal Veil tokens.', 'error');
+      return { ok: false, error: 'org_required' };
+    }
+
+    await ensureOrgSharingReady(settings);
+
+    const unlock = async (unlockSecret) => {
+      const result = await globalThis.GoldspireVeilTokens.resolveToken(tokenId, settings, { unlockSecret });
+      if (!result?.ok) {
+        const message = result?.error === 'not_found'
+          ? 'Token not found or already consumed.'
+          : 'Could not reveal token.';
+        GoldspireSecureUI.showToast(message, 'error');
+        return result;
+      }
+
+      const placeholder = globalThis.GoldspireVeilTokenFormat?.formatPlaceholder?.(tokenId) || `[veil:${tokenId}]`;
+
+      if (options.replaceNode?.isConnected) {
+        const textNode = document.createTextNode(result.plaintext);
+        options.replaceNode.replaceWith(textNode);
+      } else if (options.context) {
+        replaceVeilPlaceholder(options.context, placeholder, result.plaintext);
+      }
+
+      if (options.copyResult !== false) {
+        GoldspireSecureUI.showResultDialog({
+          title: 'Veil token revealed',
+          lines: [{ label: 'Value', value: result.plaintext }],
+          copyItems: [{ label: 'Copy', value: result.plaintext }],
+        });
+      } else {
+        GoldspireSecureUI.showToast('Veil token revealed.', 'success');
+      }
+
+      veilTokenDetector?.scheduleScan?.();
+      refreshSelectionUi();
+      return result;
+    };
+
+    const teamPassphrase = await resolveTeamPassphrase(settings);
+    if (teamPassphrase) return unlock(teamPassphrase);
+
+    await showTeamPassphrasePromptTop({
+      submitLabel: 'Reveal',
+      onSubmit: async ({ passphrase }) => {
+        const unlockSecret = passphrase?.trim();
+        if (!unlockSecret) throw new Error('Passphrase is required.');
+        await unlock(unlockSecret);
+      },
+    });
+    return { ok: true };
+  }
+
+  async function resolveVeilSelection(message = {}) {
+    const context = getSelectionContext(message);
+    const selected = String(context?.selectedText || message.selectionText || '').trim();
+    const parsed = globalThis.GoldspireVeilTokenFormat?.parsePlaceholder?.(selected)
+      || globalThis.GoldspireVeilTokenFormat?.findAllInText?.(selected)?.[0];
+
+    if (!parsed?.tokenId) {
+      GoldspireSecureUI.showToast('Select a [veil:vt_…] token to reveal.', 'error');
+      return;
+    }
+
+    await resolveVeilTokenId(parsed.tokenId, { context, copyResult: message.copyResult !== false });
+  }
+
   function insertAtCursor(text) {
     const context = getSelectionContext();
     if (context?.selectedText) {
@@ -493,7 +609,7 @@
     if (!preview || !GoldspireRedacted.isRedactedToken(preview)) return false;
     if (settings?.showSelectionPill === false) return false;
     const host = location.hostname;
-    if (snoozedHosts.has(host)) return false;
+    if (isHostSnoozed(host)) return false;
     if (Date.now() < pillSnoozedUntil) return false;
     const mode = settings?.selectionUiMode || 'smart';
     if (mode === 'quiet') return false;
@@ -1330,6 +1446,11 @@
     if (!ensureExtensionReady()) return;
 
     const context = getSelectionContext(message);
+    const selected = String(context?.selectedText || '').trim();
+    if (globalThis.GoldspireVeilTokenFormat?.isVeilToken?.(selected)) {
+      return resolveVeilSelection(message);
+    }
+
     if (!context?.selectedText) {
       GoldspireSecureUI.showToast('Click or highlight [redacted] to unlock.', 'error');
       return;
@@ -1458,6 +1579,7 @@
           }
           return unlockSelection(message);
         },
+        RESOLVE_VEIL_TOKEN: () => resolveVeilSelection(message),
         INSERT_GENERATED_PASSWORD: insertGeneratedPassword,
         INSERT_GENERATED_SECURED_PASSWORD: () => insertGeneratedSecuredPassword(message),
         INSERT_TEXT: async () => {
@@ -1471,6 +1593,27 @@
           preview: GoldspireSelection.getLivePreview(),
           inEditable: isComposeContext(),
         }),
+        VEIL_EXECUTE_ACTION: async () => {
+          const settings = await getSettings();
+          const selectionContext = getSelectionContext(message);
+          const text = message.text || selectionContext?.selectedText || '';
+          const context = message.context || {
+            source: message.source || 'selection',
+            host: location.hostname || '',
+          };
+          const detections =
+            message.detections
+            || (text ? globalThis.GoldspireDetection?.analyze?.(text, context) : []);
+          return globalThis.GoldspireVeilActions?.execute?.(message.actionId, {
+            settings,
+            selectionContext,
+            text,
+            context,
+            detections,
+            options: message.options,
+            message,
+          });
+        },
       };
 
       const handler = handlers[message?.type];
@@ -1487,7 +1630,7 @@
         warnStaleContext();
         return { ok: false };
       }
-      console.warn('[Goldspire Secure Text]', error);
+      console.warn('[Veil]', error);
       safeToast('Something went wrong — refresh the page and try again.', 'error');
       return { ok: false };
     }
@@ -1570,7 +1713,7 @@
   });
 
   if (!globalThis.GoldspireSelection?.initSelectionTracking) {
-    console.error('[Goldspire Secure Text] selection module failed to load — reload the extension.');
+    console.error('[Veil] selection module failed to load — reload the extension.');
     return;
   }
 
@@ -1591,7 +1734,7 @@
   }
 
   // Pre-load snoozed hosts and cache settings for synchronous UI decisions
-  runSafe(loadSnoozedHosts());
+  runSafe(GoldspireVeilSnooze?.load?.() || loadSnoozedHosts());
   getSettings().then((s) => {
     cachedUiSettings = s;
     scheduleOrgShareSync(s);
@@ -1611,6 +1754,33 @@
       await unlockMarker(marker, { replaceNode: node, copyResult: false });
     })());
   });
+
+  veilTokenDetector = GoldspireVeilTokenDetector?.initVeilTokenDetector?.(getSettings, (tokenId, node) => {
+    runSafe(resolveVeilTokenId(tokenId, { replaceNode: node, copyResult: false }));
+  });
+
+  GoldspirePasteObserve?.initPasteObserve?.({ getSettings, runSafe });
+
+  GoldspireVeilActions?.registerDeps?.({
+    getSettings,
+    secureSelection,
+    getSelectionContext,
+    replaceSelection,
+    copySecureText,
+    executeSecureBatch,
+    resolveTeamPassphrase,
+  });
+
+  GoldspireVeilSnooze?.load?.();
+
+  GoldspireVeilSelectionCopilot?.initSelectionCopilot?.({
+    getPreview: getActivePreview,
+    getSelectionContext: () => getSelectionContext(),
+    getSettings,
+    isComposeContext,
+  });
+
+  GoldspireAiBootstrap?.initAi?.({ getSettings, runSafe });
 
   try {
     runtimeApi()?.onMessage?.addListener((message, _sender, sendResponse) => {

@@ -48,6 +48,8 @@ const defaults = {
   orgProvisionSource: '',
   orgPolicyVersion: 0,
   orgMemberEmail: '',
+  copilotEnabled: false,
+  dlpMode: 'off',
 };
 
 const SETTINGS_KEYS = [
@@ -76,6 +78,8 @@ const SETTINGS_KEYS = [
   'orgProvisionSource',
   'orgPolicyVersion',
   'orgMemberEmail',
+  'copilotEnabled',
+  'dlpMode',
 ];
 
 // ── DOM refs ────────────────────────────────────────────────────────────────
@@ -521,6 +525,15 @@ function applySettingsToForm(settings) {
   const orgEmailEl = document.getElementById('orgMemberEmail');
   if (orgEmailEl) orgEmailEl.value = settings.orgMemberEmail || '';
 
+  const copilotEl = document.getElementById('copilotEnabled');
+  if (copilotEl) copilotEl.checked = settings.copilotEnabled === true;
+
+  const dlpModeEl = document.getElementById('dlpMode');
+  if (dlpModeEl) {
+    const mode = String(settings.dlpMode || 'off').toLowerCase();
+    dlpModeEl.value = ['off', 'observe', 'enforce'].includes(mode) ? mode : 'off';
+  }
+
   return profile;
 }
 
@@ -636,6 +649,8 @@ form?.addEventListener('submit', async (event) => {
     passwordUppercase: passwordUppercaseInput?.checked !== false,
     passwordDigits: passwordDigitsInput?.checked !== false,
     passwordSymbols: passwordSymbolsInput?.checked !== false,
+    copilotEnabled: document.getElementById('copilotEnabled')?.checked === true,
+    dlpMode: document.getElementById('dlpMode')?.value || 'off',
   });
 
   const submitButton = form.querySelector('button[type="submit"]');

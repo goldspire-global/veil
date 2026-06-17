@@ -276,6 +276,26 @@
   color: #e8c55a;
 }
 
+.gst-veil-token-btn {
+  all: unset;
+  display: inline;
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 1px 6px;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(96, 165, 250, 0.45);
+  color: #93c5fd;
+  font: 600 11px/1.5 Consolas, "Segoe UI", system-ui, sans-serif;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+}
+
+.gst-veil-token-btn:hover {
+  background: rgba(59, 130, 246, 0.28);
+  border-color: rgba(147, 197, 253, 0.7);
+  color: #dbeafe;
+}
+
 .gst-relock-banner {
   position: fixed;
   left: 50%;
@@ -469,4 +489,157 @@
   opacity: 1;
   background: rgba(15, 23, 42, 0.92);
   color: #e2e8f0;
+}
+
+/* Veil copilot prompt */
+.gst-dialog--veil {
+  width: min(440px, calc(100vw - 32px));
+}
+
+.gst-veil-kicker {
+  margin: 0 0 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #d4a017;
+}
+
+.gst-veil-subtitle {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: #b8bfd1;
+}
+
+.gst-veil-summary {
+  margin: 0 0 14px;
+  font-size: 13px;
+  color: #e2e8f0;
+}
+
+.gst-veil-actions {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.gst-veil-action {
+  all: unset;
+  box-sizing: border-box;
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #0b0f19;
+  cursor: pointer;
+  text-align: left;
+}
+
+.gst-veil-action--recommended {
+  border-color: rgba(212, 160, 23, 0.55);
+  box-shadow: 0 0 0 1px rgba(212, 160, 23, 0.15);
+}
+
+.gst-veil-action--stub {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.gst-veil-action__label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f4f6fb;
+}
+
+.gst-veil-action__desc {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.gst-veil-footer {
+  justify-content: flex-end;
+}
+
+.gst-dialog--veil-ai .gst-veil-action[data-action-id="mask"] .gst-veil-action__label::after {
+  content: '';
+}
+
+/* Veil selection copilot bar */
+.gst-veil-selection-bar {
+  position: fixed;
+  right: 18px;
+  bottom: 72px;
+  z-index: 2147483644;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: min(420px, calc(100vw - 36px));
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: #111522;
+  border: 1px solid rgba(212, 160, 23, 0.35);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
+  font-family: "Segoe UI", system-ui, sans-serif;
+  color: #f4f6fb;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.gst-veil-selection-bar--visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.gst-veil-selection-bar__label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #d4a017;
+}
+
+.gst-veil-selection-bar__hint {
+  font-size: 12px;
+  color: #b8bfd1;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gst-veil-selection-bar__actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.gst-veil-selection-bar__btn {
+  all: unset;
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(212, 160, 23, 0.15);
+  color: #f0c14b;
+  border: 1px solid rgba(212, 160, 23, 0.35);
+}
+
+.gst-veil-selection-bar__btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.gst-veil-selection-bar__close {
+  all: unset;
+  cursor: pointer;
+  color: #94a3b8;
+  font-size: 12px;
+  padding: 2px 4px;
 }

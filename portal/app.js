@@ -113,11 +113,16 @@
     return Array.from(bytes, (b) => chars[b % chars.length]).join('');
   }
 
+  function getAdminToken() {
+    return loadAdminSession()?.adminToken || '';
+  }
+
   global.GoldspirePortalApp = {
     apiBase,
     portalOrigin,
     apiPublic,
     apiAdmin,
+    getAdminToken,
     setStatus,
     loadAdminSession,
     saveAdminSession,

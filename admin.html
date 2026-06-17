@@ -106,9 +106,64 @@
         </form>
         <table>
           <thead>
-            <tr><th>Email</th><th>Name</th><th>Extension</th><th>Added</th><th></th></tr>
+            <tr><th>Email</th><th>Name</th><th>Sub-team</th><th>Extension</th><th>Added</th><th></th></tr>
           </thead>
           <tbody id="members-body"></tbody>
+        </table>
+      </div>
+
+      <div class="card" id="security-card">
+        <h2>Veil security activity</h2>
+        <p class="lede">Aggregated detection and policy events (metadata only).</p>
+        <div class="btn-row">
+          <label class="field" style="margin:0;">
+            <span class="hint">Period</span>
+            <select id="security-days">
+              <option value="7">Last 7 days</option>
+              <option value="30" selected>Last 30 days</option>
+              <option value="90">Last 90 days</option>
+            </select>
+          </label>
+          <button type="button" class="btn btn--ghost btn--sm" id="security-refresh-btn">Refresh</button>
+          <button type="button" class="btn btn--ghost btn--sm" id="security-export-json-btn">Export JSON</button>
+          <button type="button" class="btn btn--ghost btn--sm" id="security-export-csv-btn">Export CSV</button>
+        </div>
+        <div id="security-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin:1rem 0;"></div>
+        <table>
+          <thead><tr><th>Category</th><th>Events</th></tr></thead>
+          <tbody id="security-category-body"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>SIEM webhook</h2>
+        <p class="lede">Forward new security events to your SIEM (metadata only).</p>
+        <form id="siem-form">
+          <div class="field">
+            <label for="siem-url">Webhook URL</label>
+            <input id="siem-url" type="url" placeholder="https://siem.example.com/veil" />
+          </div>
+          <div class="field">
+            <label for="siem-secret">Shared secret (optional)</label>
+            <input id="siem-secret" type="password" autocomplete="new-password" placeholder="Leave blank to keep current" />
+          </div>
+          <button type="submit" class="btn btn--sm">Save SIEM settings</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Sub-teams</h2>
+        <p class="lede">Per-team DLP policy overlays for members.</p>
+        <form id="create-team-form" class="btn-row" style="align-items:flex-end;">
+          <div class="field" style="flex:1;margin:0;">
+            <label for="team-name">Team name</label>
+            <input id="team-name" required placeholder="Engineering" />
+          </div>
+          <button type="submit" class="btn btn--sm">Create team</button>
+        </form>
+        <table style="margin-top:1rem;">
+          <thead><tr><th>Team</th><th>Members</th><th>Created</th><th></th></tr></thead>
+          <tbody id="teams-body"></tbody>
         </table>
       </div>
 
@@ -136,6 +191,16 @@
     const dashboard = document.getElementById('dashboard');
     const loginStatus = document.getElementById('login-status');
     const dashStatus = document.getElementById('dash-status');
+    let cachedTeams = [];
+
+    function teamOptionsHtml(selectedId) {
+      const options = ['<option value="">— None —</option>'];
+      for (const team of cachedTeams) {
+        const selected = team.teamId === selectedId ? ' selected' : '';
+        options.push(`<option value="${team.teamId}"${selected}>${team.name}</option>`);
+      }
+      return options.join('');
+    }
 
     function showDashboard(show) {
       loginCard.classList.toggle('hidden', show);
@@ -148,6 +213,8 @@
       try {
         const org = await app.apiAdmin('/v1/orgs/me');
         const codes = await app.apiAdmin('/v1/orgs/me/join-codes');
+        const teamsData = await app.apiAdmin('/v1/orgs/me/teams');
+        cachedTeams = teamsData.teams || [];
         const members = await app.apiAdmin('/v1/orgs/me/members');
         const devices = await app.apiAdmin('/v1/orgs/me/devices');
 
@@ -158,6 +225,7 @@
         document.getElementById('settings-email').value = org.adminEmail || '';
         document.getElementById('settings-membership-policy').value = org.settings?.membershipPolicy || 'invite';
         document.getElementById('settings-domains').value = (org.settings?.allowedEmailDomains || []).join(', ');
+        document.getElementById('siem-url').value = org.settings?.analytics?.siemWebhookUrl || '';
 
         const codesBody = document.getElementById('codes-body');
         codesBody.innerHTML = codes.joinCodes.map((row) => `
@@ -179,6 +247,11 @@
             <tr>
               <td>${row.email}</td>
               <td>${row.displayName || '—'}</td>
+              <td>
+                ${row.active
+                  ? `<select data-assign-team="${row.email}" class="field__input" style="padding:6px 8px;font-size:13px;">${teamOptionsHtml(row.teamId)}</select>`
+                  : (row.teamName || '—')}
+              </td>
               <td>${row.registered ? 'Connected' : 'Not yet'}</td>
               <td>${app.formatWhen(row.createdAt)}</td>
               <td>
@@ -188,7 +261,9 @@
               </td>
             </tr>
           `).join('')
-          : '<tr><td colspan="5">No members yet. Add emails above, then share a join code.</td></tr>';
+          : '<tr><td colspan="6">No members yet. Add emails above, then share a join code.</td></tr>';
+
+        renderTeamsTable();
 
         const devicesBody = document.getElementById('devices-body');
         devicesBody.innerHTML = devices.devices.length
@@ -207,6 +282,7 @@
           : '<tr><td colspan="4">No browsers connected yet.</td></tr>';
 
         app.setStatus(dashStatus, '');
+        await loadSecuritySummary();
       } catch (error) {
         app.setStatus(dashStatus, error.message || 'Could not load your team.', 'error');
         if ((error.message || '').includes('admin token') || (error.message || '').includes('sign-in')) {
@@ -215,6 +291,117 @@
         }
       }
     }
+
+    async function loadSecuritySummary() {
+      const days = document.getElementById('security-days')?.value || '30';
+      const statsEl = document.getElementById('security-stats');
+      const catBody = document.getElementById('security-category-body');
+      if (!statsEl || !catBody) return;
+      try {
+        const summary = await app.apiAdmin(`/v1/orgs/me/security-events/summary?days=${days}`);
+        const t = summary.totals || {};
+        const stat = (label, value) => `
+          <div style="padding:12px;border:1px solid #e5e7eb;border-radius:8px;">
+            <div style="font-size:1.4rem;font-weight:600;">${value}</div>
+            <div class="hint">${label}</div>
+          </div>`;
+        statsEl.innerHTML = [
+          stat('Total', t.total || 0),
+          stat('Detections', t.detections || 0),
+          stat('Blocks', t.blocks || 0),
+          stat('AI incidents', t.aiIncidents || 0),
+        ].join('');
+        catBody.innerHTML = (summary.byCategory || []).length
+          ? summary.byCategory.map((row) => `<tr><td>${row.category.replace(/_/g, ' ')}</td><td>${row.count}</td></tr>`).join('')
+          : '<tr><td colspan="2">No events yet.</td></tr>';
+      } catch {
+        statsEl.innerHTML = '';
+        catBody.innerHTML = '<tr><td colspan="2">Could not load summary.</td></tr>';
+      }
+    }
+
+    function renderTeamsTable() {
+      const body = document.getElementById('teams-body');
+      if (!body) return;
+      body.innerHTML = cachedTeams.length
+        ? cachedTeams.map((team) => `
+          <tr>
+            <td>${team.name}</td>
+            <td>${team.memberCount || 0}</td>
+            <td>${app.formatWhen(team.createdAt)}</td>
+            <td>
+              <button type="button" class="btn btn--ghost btn--sm" data-edit-team-dlp="${team.teamId}">DLP overlay</button>
+            </td>
+          </tr>
+        `).join('')
+        : '<tr><td colspan="4">No teams yet.</td></tr>';
+    }
+
+    async function loadTeams() {
+      try {
+        const data = await app.apiAdmin('/v1/orgs/me/teams');
+        cachedTeams = data.teams || [];
+        renderTeamsTable();
+      } catch {
+        const body = document.getElementById('teams-body');
+        if (body) body.innerHTML = '<tr><td colspan="4">Could not load teams.</td></tr>';
+      }
+    }
+
+    async function downloadSecurityExport(format) {
+      const days = document.getElementById('security-days')?.value || '30';
+      const base = app.apiBase();
+      const response = await fetch(`${base}/v1/orgs/me/security-events/export?days=${days}&format=${format}`, {
+        headers: { Authorization: `Bearer ${app.getAdminToken()}` },
+      });
+      if (!response.ok) throw new Error('Export failed.');
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `veil-events-${days}d.${format === 'csv' ? 'csv' : 'json'}`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    document.getElementById('security-refresh-btn')?.addEventListener('click', () => loadSecuritySummary());
+    document.getElementById('security-days')?.addEventListener('change', () => loadSecuritySummary());
+    document.getElementById('security-export-json-btn')?.addEventListener('click', () => downloadSecurityExport('json').catch((e) => app.setStatus(dashStatus, e.message, 'error')));
+    document.getElementById('security-export-csv-btn')?.addEventListener('click', () => downloadSecurityExport('csv').catch((e) => app.setStatus(dashStatus, e.message, 'error')));
+
+    document.getElementById('create-team-form')?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      try {
+        await app.apiAdmin('/v1/orgs/me/teams', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: document.getElementById('team-name').value.trim() }),
+        });
+        document.getElementById('team-name').value = '';
+        app.setStatus(dashStatus, 'Team created.', 'ok');
+        await loadTeams();
+      } catch (error) {
+        app.setStatus(dashStatus, error.message, 'error');
+      }
+    });
+
+    document.getElementById('siem-form')?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const analytics = { siemWebhookUrl: document.getElementById('siem-url').value.trim() };
+      const secret = document.getElementById('siem-secret').value.trim();
+      if (secret) analytics.siemWebhookSecret = secret;
+      try {
+        await app.apiAdmin('/v1/orgs/me', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ settings: { analytics } }),
+        });
+        document.getElementById('siem-secret').value = '';
+        app.setStatus(dashStatus, 'SIEM settings saved.', 'ok');
+      } catch (error) {
+        app.setStatus(dashStatus, error.message, 'error');
+      }
+    });
 
     document.getElementById('login-form').addEventListener('submit', async (event) => {
       event.preventDefault();
@@ -312,12 +499,57 @@
       }
     });
 
+    dashboard.addEventListener('change', async (event) => {
+      const email = event.target?.dataset?.assignTeam;
+      if (!email) return;
+      try {
+        await app.apiAdmin('/v1/orgs/me/teams/assign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, teamId: event.target.value || null }),
+        });
+        app.setStatus(dashStatus, `Team updated for ${email}.`, 'ok');
+      } catch (error) {
+        app.setStatus(dashStatus, error.message, 'error');
+        await loadDashboard();
+      }
+    });
+
     dashboard.addEventListener('click', async (event) => {
       const code = event.target?.dataset?.deactivateCode;
       const email = event.target?.dataset?.deactivateMember;
       const device = event.target?.dataset?.revokeDevice;
+      const teamDlpId = event.target?.dataset?.editTeamDlp;
 
       try {
+        if (teamDlpId) {
+          const team = cachedTeams.find((row) => row.teamId === teamDlpId);
+          const template = JSON.stringify({
+            enabled: true,
+            categories: {
+              api_key: { action: 'block', minSeverity: 'high' },
+              jwt: { action: 'block', minSeverity: 'high' },
+            },
+          }, null, 2);
+          const current = team?.settings?.dlp ? JSON.stringify(team.settings.dlp, null, 2) : template;
+          const input = window.prompt(`DLP overlay JSON for ${team?.name || 'team'}:`, current);
+          if (input == null) return;
+          let dlp;
+          try {
+            dlp = JSON.parse(input);
+          } catch {
+            app.setStatus(dashStatus, 'Invalid JSON.', 'error');
+            return;
+          }
+          await app.apiAdmin(`/v1/orgs/me/teams/${encodeURIComponent(teamDlpId)}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ settings: { dlp } }),
+          });
+          app.setStatus(dashStatus, 'Team DLP overlay saved.', 'ok');
+          await loadTeams();
+          return;
+        }
         if (code) {
           await app.apiAdmin(`/v1/orgs/me/join-codes/${encodeURIComponent(code)}`, {
             method: 'PATCH',
