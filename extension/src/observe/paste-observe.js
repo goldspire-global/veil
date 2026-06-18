@@ -112,7 +112,8 @@
         alreadyInserted,
         onDismiss: () => resolve({ dismissed: true }),
         onAction: async (actionId) => {
-          const selectionContext = alreadyInserted && match
+          const needsSelection = actionId !== 'ignore' && alreadyInserted && match;
+          const selectionContext = needsSelection
             ? global.GoldspirePasteInsert?.buildSelectionForMatch?.(fieldState, match)
             : null;
           const result = await global.GoldspireVeilCopilot?.applyPasteAction?.(actionId, {

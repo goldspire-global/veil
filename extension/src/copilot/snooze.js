@@ -47,8 +47,13 @@
   }
 
   const compositionAllowed = [];
+  /** Fields where the user chose Allow — skip copilot for the rest of this page session. */
+  const allowedFields = new WeakSet();
 
   function allowComposition(host, text, match, fieldState) {
+    if (fieldState?.element) {
+      allowedFields.add(fieldState.element);
+    }
     compositionAllowed.push({
       host: String(host || '').trim(),
       matchRaw: String(match?.raw || text || '').trim(),
@@ -58,6 +63,9 @@
   }
 
   function isCompositionAllowed(host, text, match, fieldState) {
+    if (fieldState?.element && allowedFields.has(fieldState.element)) {
+      return true;
+    }
     const key = String(host || '').trim();
     const matchRaw = String(match?.raw || text || '').trim();
     const fieldText = String(fieldState?.text || text || '');
