@@ -20,6 +20,10 @@
     toast.textContent = message;
     document.documentElement.appendChild(toast);
 
+    requestAnimationFrame(() => {
+      toast.classList.add('gst-toast--visible');
+    });
+
     window.setTimeout(() => toast.remove(), 3600);
   }
 

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'self';"
+    />
+    <title>Unlock — Veil by Goldspire</title>
+    <link rel="icon" href="icons/icon-48.png" sizes="48x48" />
+    <link rel="stylesheet" href="unlock.css" />
+  </head>
+  <body>
+    <main class="unlock">
+      <header class="unlock__header">
+        <img class="unlock__logo" src="icons/icon-48.png" alt="" width="40" height="40" />
+        <div>
+          <h1>Unlock [redacted]</h1>
+          <p id="subtitle">Enter the passphrase shared with you.</p>
+        </div>
+      </header>
+
+      <form id="unlock-form" class="unlock__form" method="post" action="#">
+        <label id="paste-field" class="field">
+          <span>Paste message containing [redacted]</span>
+          <textarea id="securedText" rows="4" placeholder="Paste the full message here"></textarea>
+        </label>
+        <label class="field">
+          <span id="secret-label">Passphrase</span>
+          <input id="secret" name="passphrase" type="password" autocomplete="current-password" required />
+        </label>
+        <button type="submit" class="btn">Unlock</button>
+      </form>
+
+      <section id="result" class="result" hidden>
+        <h2>Unlocked</h2>
+        <code id="result-value"></code>
+        <div class="result__actions">
+          <button type="button" id="copy-result" class="btn btn--ghost">Copy</button>
+        </div>
+      </section>
+
+      <p id="error" class="error" hidden></p>
+    </main>
+    <script src="../src/constants.js"></script>
+    <script src="../src/passphrase-policy.js"></script>
+    <script src="../src/burn-list.js"></script>
+    <script src="../src/browser.js"></script>
+    <script src="../src/crypto.js"></script>
+    <script src="../src/marker.js"></script>
+    <script src="../src/redacted.js"></script>
+    <script src="constants.js" integrity="sha384-73eIl+KOx2889d1nfaAMxcNSdoy/JM6WOrskn9OQcyCW6paJxFF6MtlVsae8sL59" crossorigin="anonymous"></script>
+    <script src="passphrase-policy.js" integrity="sha384-l3gfMou53005o1GkFaJBjRj6dwRb8Ewoe9STai9EaLaIKCjFJiOmD6i+qVFnjSlS" crossorigin="anonymous"></script>
+    <script src="burn-list.js" integrity="sha384-sZWfk66+fVP2mCyrEWeE1FhOJzTeXBQ9EASLK/cFkVZwzjm1Uv51bDNZabNtaM4y" crossorigin="anonymous"></script>
+    <script src="browser.js" integrity="sha384-p6HM3x/CW1DwodIJXIAlOt+R5NQPhAv+NP6B+1+QK3QNMXNmNP52SpGuxGGw8e9A" crossorigin="anonymous"></script>
+    <script src="crypto.js" integrity="sha384-11/rQsa3AZSBSNmfoDiRenUch4ARpLOv4C9qhLv5LmIBLY8GsuOwzLc8g/dzQazi" crossorigin="anonymous"></script>
+    <script src="marker.js" integrity="sha384-Da7JQisRDu09ReCMWAntGdQuJVCmjwGXjXxav8hrQRuilB0lrmQqBbFabrsp4DoW" crossorigin="anonymous"></script>
+    <script src="redacted.js" integrity="sha384-ex9lJ8ttnb3gBQtAZoJD49yILdf1hVoRFra53MiBnZyYqgMmwhNRCnuQXR+raxaS" crossorigin="anonymous"></script>
+    <script src="unlock.js" integrity="sha384-JBGTMd96rpGoggkrwY4pFf5XHYYclj1L5n5nmINR/YtLMXRFJUi9Fx6gDz02pGzf" crossorigin="anonymous"></script>
+  </body>
+</html>

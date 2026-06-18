@@ -20,16 +20,21 @@
         </header>
 
         <!-- Step 1: pick profile -->
-        <div id="setup-step-pick">
+        <div id="setup-progress" class="setup-progress" hidden aria-hidden="true">
+          <span class="setup-progress__dot setup-progress__dot--active"></span>
+          <span class="setup-progress__dot"></span>
+        </div>
+
+        <div id="setup-step-pick" class="setup-step">
           <p class="setup-label">How will you use this?</p>
           <div class="profile-pick">
             <button type="button" class="profile-card" data-profile="personal">
-              <span class="profile-card__icon">👤</span>
+              <span class="profile-card__mark" aria-hidden="true">P</span>
               <strong>Personal</strong>
               <span class="profile-card__desc">Just me — secure passwords and secrets in email, forms, and notes.</span>
             </button>
             <button type="button" class="profile-card" data-profile="organization">
-              <span class="profile-card__icon">🏢</span>
+              <span class="profile-card__mark" aria-hidden="true">T</span>
               <strong>Team</strong>
               <span class="profile-card__desc">Join your company — settings and passphrase stay in sync.</span>
             </button>
@@ -87,14 +92,14 @@
           </div>
         </header>
 
-        <nav class="tabs">
-          <button type="button" class="tabs__btn tabs__btn--active" data-tab="home">Home</button>
-          <button type="button" class="tabs__btn" data-tab="settings">Settings</button>
-          <button type="button" class="tabs__btn" data-tab="help">Help</button>
+        <nav class="tabs" role="tablist" aria-label="Veil">
+          <button type="button" class="tabs__btn tabs__btn--active" data-tab="home" role="tab" aria-selected="true" aria-controls="tab-home" id="tab-btn-home">Home</button>
+          <button type="button" class="tabs__btn" data-tab="settings" role="tab" aria-selected="false" aria-controls="tab-settings" id="tab-btn-settings">Settings</button>
+          <button type="button" class="tabs__btn" data-tab="help" role="tab" aria-selected="false" aria-controls="tab-help" id="tab-btn-help">Help</button>
         </nav>
 
         <!-- Home -->
-        <div id="tab-home" class="tab tab--active">
+        <div id="tab-home" class="tab tab--active" role="tabpanel" aria-labelledby="tab-btn-home">
           <div class="card card--readiness" id="readiness-card" hidden>
             <h2 class="readiness__title">Setup checklist</h2>
             <ul class="readiness__list" id="readiness-list"></ul>
@@ -113,7 +118,7 @@
         </div>
 
         <!-- Settings -->
-        <div id="tab-settings" class="tab">
+        <div id="tab-settings" class="tab" role="tabpanel" aria-labelledby="tab-btn-settings">
           <form id="settings-form" class="popup__form">
 
             <!-- Personal -->
@@ -290,7 +295,7 @@
         </div>
 
         <!-- Help -->
-        <div id="tab-help" class="tab">
+        <div id="tab-help" class="tab" role="tabpanel" aria-labelledby="tab-btn-help">
           <div id="help-personal" class="help-content">
             <div class="card">
               <h2>How it works</h2>

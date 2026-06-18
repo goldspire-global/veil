@@ -393,12 +393,17 @@ const server = createServer(async (req, res) => {
       '/install.html': 'install.html',
       '/privacy.html': 'privacy.html',
       '/terms.html': 'terms.html',
+      '/unlock.html': 'unlock.html',
     };
     if (req.method === 'GET' && portalPages[pathname]) {
       if (serveStatic(portalPages[pathname], res)) return;
     }
 
     if (req.method === 'GET' && pathname.startsWith('/portal/')) {
+      if (serveStatic(pathname.slice(1), res)) return;
+    }
+
+    if (req.method === 'GET' && (pathname.startsWith('/icons/') || pathname === '/unlock.css' || pathname === '/unlock.js')) {
       if (serveStatic(pathname.slice(1), res)) return;
     }
 

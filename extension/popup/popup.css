@@ -171,6 +171,20 @@ body {
   background: #151f30;
 }
 
+.profile-card__mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #17130a;
+  background: linear-gradient(135deg, #d4a017, #f0c14b);
+  margin-bottom: 2px;
+}
+
 .profile-card__icon {
   font-size: 20px;
   margin-bottom: 2px;
@@ -190,6 +204,44 @@ body {
 .setup-step__title {
   margin: 8px 0 10px;
   font-size: 15px;
+}
+
+.setup-progress {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.setup-progress__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.setup-progress__dot--active {
+  background: linear-gradient(135deg, #d4a017, #f0c14b);
+  transform: scale(1.15);
+}
+
+.setup-step--enter {
+  animation: popup-step-in 0.28s ease both;
+}
+
+@keyframes popup-step-in {
+  from { opacity: 0; transform: translateX(8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.view--enter {
+  animation: popup-view-in 0.22s ease both;
+}
+
+@keyframes popup-view-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .setup-back {
@@ -352,10 +404,16 @@ body {
 
 .tab {
   display: none;
+  animation: popup-tab-in 0.2s ease both;
 }
 
 .tab--active {
   display: block;
+}
+
+@keyframes popup-tab-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .card {
@@ -523,8 +581,8 @@ body {
 .card--readiness {
   margin-bottom: 10px;
   padding: 12px;
-  border: 1px solid rgba(59, 130, 246, 0.35);
-  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(212, 160, 23, 0.35);
+  background: rgba(212, 160, 23, 0.08);
 }
 
 .readiness__title {
@@ -546,6 +604,31 @@ body {
   gap: 8px;
   font-size: 12px;
   color: #c5cad6;
+}
+
+.readiness__item--action {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 4px 6px;
+  margin: -4px -6px;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #f6d57a;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.readiness__item--action:hover {
+  background: rgba(212, 160, 23, 0.12);
+}
+
+.readiness__item--recommended {
+  color: #9aa3b8;
+  font-size: 11px;
 }
 
 .readiness__item--ok {

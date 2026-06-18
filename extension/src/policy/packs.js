@@ -1,0 +1,84 @@
+/**
+ * Veil org DLP policy packs — extension mirror of portal/policy-packs.js
+ */
+(function (global) {
+  const PACKS = Object.freeze({
+    observational: {
+      id: 'observational',
+      label: 'Observational',
+      dlp: { version: 1, enabled: false, defaultAction: 'warn', categories: {}, aiSurfaces: { defaultAction: 'block', categories: {} } },
+    },
+    finance: {
+      id: 'finance',
+      label: 'Finance',
+      dlp: {
+        version: 1,
+        enabled: true,
+        defaultAction: 'warn',
+        categories: {
+          credit_card: { action: 'block', minSeverity: 'medium' },
+          bank_account: { action: 'block', minSeverity: 'high' },
+          iban: { action: 'block', minSeverity: 'high' },
+          ssn: { action: 'block', minSeverity: 'high' },
+          national_id: { action: 'block', minSeverity: 'high' },
+          api_key: { action: 'block', minSeverity: 'high' },
+          jwt: { action: 'block', minSeverity: 'high' },
+        },
+        aiSurfaces: {
+          defaultAction: 'block',
+          categories: { credit_card: { action: 'block' }, api_key: { action: 'block' }, jwt: { action: 'block' } },
+        },
+      },
+    },
+    healthcare: {
+      id: 'healthcare',
+      label: 'Healthcare',
+      dlp: {
+        version: 1,
+        enabled: true,
+        defaultAction: 'warn',
+        categories: {
+          medical_record_number: { action: 'block', minSeverity: 'high' },
+          ssn: { action: 'block', minSeverity: 'high' },
+          credit_card: { action: 'block', minSeverity: 'high' },
+          national_id: { action: 'block', minSeverity: 'high' },
+          passport: { action: 'block', minSeverity: 'high' },
+          email: { action: 'warn', minSeverity: 'high' },
+          phone: { action: 'warn', minSeverity: 'high' },
+        },
+        aiSurfaces: {
+          defaultAction: 'block',
+          categories: {
+            medical_record_number: { action: 'block' },
+            ssn: { action: 'block' },
+            credit_card: { action: 'block' },
+          },
+        },
+      },
+    },
+    engineering: {
+      id: 'engineering',
+      label: 'Engineering',
+      dlp: {
+        version: 1,
+        enabled: true,
+        defaultAction: 'warn',
+        categories: {
+          api_key: { action: 'block', minSeverity: 'high' },
+          jwt: { action: 'block', minSeverity: 'high' },
+          password: { action: 'warn', minSeverity: 'medium' },
+          internal_company_reference: { action: 'warn', minSeverity: 'medium' },
+        },
+        aiSurfaces: {
+          defaultAction: 'block',
+          categories: { api_key: { action: 'block' }, jwt: { action: 'block' }, password: { action: 'warn' } },
+        },
+      },
+    },
+  });
+
+  global.GoldspirePolicyPacks = {
+    list() { return Object.values(PACKS); },
+    get(id) { return PACKS[String(id || '').trim()] || null; },
+  };
+})(typeof globalThis !== 'undefined' ? globalThis : self);

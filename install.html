@@ -14,33 +14,55 @@
 
     <div class="card">
       <h1>Install Veil</h1>
-      <p class="lede">Browser extension for Chrome and Microsoft Edge.</p>
+      <p class="lede">Chrome and Microsoft Edge extension. Firefox supported with Gecko ID configuration.</p>
 
-      <h2>For team members</h2>
+      <h2>Personal use</h2>
       <ol class="steps">
-        <li>Install Veil from your organization’s software catalog, Chrome Web Store, or Edge Add-ons (link from your admin).</li>
-        <li>Open the Veil popup → choose <strong>Team</strong> → enter your join code and work email.</li>
-        <li>Save your team passphrase when prompted.</li>
-        <li>Refresh Outlook or Gmail, then paste or highlight a secret to see Veil copilot.</li>
+        <li>Install from your browser store (or load unpacked for pilots — see below).</li>
+        <li>Open Veil → choose <strong>Personal</strong> → set a passphrase.</li>
+        <li>Highlight sensitive text in Gmail, Outlook, or any web form → <strong>Secure selection</strong> or use the keyboard shortcut.</li>
+      </ol>
+
+      <h2>Team members</h2>
+      <ol class="steps">
+        <li>Install Veil from your org catalog or store link from your admin.</li>
+        <li>Open the popup → <strong>Team</strong> → enter join code and work email.</li>
+        <li>Save the team passphrase your admin shares (password manager recommended).</li>
+        <li>Refresh Outlook or Gmail. Veil copilot appears on paste and while typing sensitive content.</li>
       </ol>
       <div class="btn-row">
         <a class="btn" href="join.html">Join with a code</a>
       </div>
 
+      <h2>Recipients without Veil</h2>
+      <p>
+        When you secure a message for someone outside your org, Veil can embed a link to the
+        <a href="unlock.html" id="unlock-page-link">hosted unlock page</a>.
+        They enter the passphrase you shared out of band — decryption runs in their browser; nothing is uploaded.
+      </p>
+
       <h2>For IT administrators</h2>
-      <p>Deploy via <strong>Chrome / Edge managed policy</strong> with extension ID and team JSON policy. Members skip manual join when <code>setupComplete</code> and <code>teamPassphrase</code> are pushed.</p>
-      <p class="hint">See the extension docs: <code>extension/docs/ENTERPRISE.md</code> in the Veil repository.</p>
+      <ul class="trust-list">
+        <li>Deploy via <strong>Chrome / Edge managed policy</strong> with extension ID and JSON policy (team passphrase, copilot defaults).</li>
+        <li>Apply a <strong>policy pack</strong> in the admin portal — Finance, Healthcare, Engineering, or observational rollout.</li>
+        <li>Forward <strong>metadata-only</strong> security events to your SIEM webhook; export JSON or CSV from the admin dashboard.</li>
+      </ul>
+      <p class="hint">Enterprise deployment details: <code>extension/docs/ENTERPRISE.md</code> in the Veil repository.</p>
+      <div class="btn-row">
+        <a class="btn btn--ghost" href="admin.html">Admin portal</a>
+        <a class="btn btn--ghost" href="create.html">Create a team</a>
+      </div>
 
       <h2>Developer / pilot install</h2>
       <ol class="steps">
         <li>Run <code>npm run package</code> in the Veil repository.</li>
-        <li>Chrome or Edge → Extensions → Developer mode → <strong>Load unpacked</strong> → select <code>extension/dist</code>.</li>
-        <li>Reload the extension after each update.</li>
+        <li>Chrome or Edge → Extensions → Developer mode → <strong>Load unpacked</strong> → <code>extension/dist</code>.</li>
+        <li>Reload after each update.</li>
       </ol>
 
       <h2>Supported browsers</h2>
-      <p>Chrome 128+, Microsoft Edge 128+, and Firefox 128+ (with Gecko extension ID configured).</p>
-      <p class="hint">Each browser profile keeps its own extension login. Join your team separately in Edge and Chrome if you use both.</p>
+      <p>Chrome 128+, Microsoft Edge 128+, Firefox 128+ (Gecko extension ID required).</p>
+      <p class="hint">Each browser profile keeps its own Veil setup. Join your team separately in Edge and Chrome if you use both.</p>
     </div>
 
     <footer class="site-footer" data-portal-footer></footer>
@@ -51,6 +73,9 @@
   <script>
     GoldspirePortalNav.renderPortalNav('install');
     GoldspirePortalNav.renderPortalFooter?.();
+    const unlockLink = document.getElementById('unlock-page-link');
+    const configured = window.GoldspirePortal?.UNLOCK_URL;
+    if (unlockLink && configured) unlockLink.href = configured;
   </script>
 </body>
 </html>

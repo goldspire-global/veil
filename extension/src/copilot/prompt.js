@@ -28,6 +28,9 @@
     onDismiss,
     variant = 'default',
     context = {},
+    title = '',
+    subtitle = '',
+    alreadyInserted = false,
   }) {
     removePrompt();
 
@@ -40,18 +43,29 @@
     const hint = recommended
       ? global.GoldspireVeilActionRegistry?.recommendHint?.(recommended.id, context) || ''
       : '';
+    const triggerLabel = title
+      || global.GoldspireVeilExplain?.buildTriggerLabel?.(context, alreadyInserted)
+      || 'Sensitive content';
+    const explainLines = global.GoldspireVeilExplain?.buildExplainSummary?.(detections, {
+      policyMessage: subtitle,
+      recommendedId,
+      context,
+    }) || [];
     const primaryActions = actions.filter((a) => a.id !== 'ignore');
     const allowAction = actions.find((a) => a.id === 'ignore');
+    const typingClass = context.source === 'type' ? ' gst-veil-pop--typing' : '';
 
     const pop = document.createElement('div');
     pop.id = PROMPT_ID;
-    pop.className = `gst-veil-pop${variant === 'ai' ? ' gst-veil-pop--ai' : ''}`;
+    pop.className = `gst-veil-pop${variant === 'ai' ? ' gst-veil-pop--ai' : ''}${typingClass}`;
     pop.innerHTML = `
       <div class="gst-veil-pop__head">
         <span class="gst-veil-pop__brand">Veil</span>
         <span class="gst-veil-pop__detect">${escapeHtml(summary)}</span>
         <button type="button" class="gst-veil-pop__close" data-action="dismiss" title="Dismiss">✕</button>
       </div>
+      <p class="gst-veil-pop__trigger">${escapeHtml(triggerLabel)}</p>
+      ${explainLines.length ? `<ul class="gst-veil-pop__why">${explainLines.map((line) => `<li>${escapeHtml(line)}</li>`).join('')}</ul>` : ''}
       <div class="gst-veil-pop__chips" data-veil-actions></div>
       ${allowAction ? '<button type="button" class="gst-veil-pop__allow" data-action-id="ignore">Allow</button>' : ''}
     `;

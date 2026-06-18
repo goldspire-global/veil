@@ -54,16 +54,31 @@
       <p class="lede">Save these details now. Your admin sign-in key is shown once and cannot be recovered.</p>
 
       <div class="credential">
-        <strong>Team name</strong>
-        <code id="out-display-name"></code>
+        <div class="credential__row">
+          <div>
+            <strong>Team name</strong>
+            <code id="out-display-name"></code>
+          </div>
+          <button type="button" class="btn btn--ghost btn-copy" data-copy-target="out-display-name">Copy</button>
+        </div>
       </div>
       <div class="credential">
-        <strong>Join code</strong>
-        <code id="out-join-code"></code>
+        <div class="credential__row">
+          <div>
+            <strong>Join code</strong>
+            <code id="out-join-code"></code>
+          </div>
+          <button type="button" class="btn btn--ghost btn-copy" data-copy-target="out-join-code">Copy</button>
+        </div>
       </div>
       <div class="credential">
-        <strong>Admin sign-in key</strong>
-        <code id="out-admin-token"></code>
+        <div class="credential__row">
+          <div>
+            <strong>Admin sign-in key</strong>
+            <code id="out-admin-token"></code>
+          </div>
+          <button type="button" class="btn btn--ghost btn-copy" data-copy-target="out-admin-token">Copy</button>
+        </div>
       </div>
 
       <div class="btn-row">
@@ -146,6 +161,8 @@ Your team is using Veil by Goldspire to protect sensitive text in email before i
 3. Use your work email when joining.
 4. Your admin will share the team passphrase separately (use your password manager).
 
+External recipients without Veil can use the hosted unlock page when you send a secure link — share the passphrase out of band.
+
 Questions? Reply to this email or contact your IT admin.`;
 
         app.saveAdminSession({
@@ -177,6 +194,20 @@ Questions? Reply to this email or contact your IT admin.`;
       } catch {
         app.setStatus(successStatus, 'Could not copy — select the text manually.', 'error');
       }
+    });
+
+    document.querySelectorAll('[data-copy-target]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copyTarget);
+        const text = target?.textContent?.trim() || '';
+        if (!text) return;
+        try {
+          await app.copyText(text);
+          app.setStatus(successStatus, 'Copied.', 'ok');
+        } catch {
+          app.setStatus(successStatus, 'Could not copy — select the text manually.', 'error');
+        }
+      });
     });
   </script>
 </body>

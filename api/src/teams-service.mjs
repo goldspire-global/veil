@@ -86,6 +86,12 @@ export async function updateTeam(admin, teamId, body = {}) {
       ...(typeof current.rows[0].settings === 'object' ? current.rows[0].settings : {}),
       ...body.settings,
     };
+    if (body.settings.dlp != null) {
+      await pool.query(
+        'UPDATE organizations SET policy_version = policy_version + 1, updated_at = now() WHERE id = $1',
+        [admin.org.id],
+      );
+    }
     patches.push(`settings = $${index++}::jsonb`);
     values.push(JSON.stringify(merged));
   }

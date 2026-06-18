@@ -162,6 +162,7 @@
     onAction,
     onDismiss,
     variant,
+    alreadyInserted = false,
   }) {
     const actions = listCopilotActions(context, settings, detections);
     const recommendedId = recommendAction(context, settings, detections);
@@ -175,6 +176,7 @@
       onAction,
       onDismiss,
       variant,
+      alreadyInserted,
     });
   }
 

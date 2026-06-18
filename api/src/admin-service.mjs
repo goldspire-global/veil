@@ -236,6 +236,13 @@ export async function updateOrganization(admin, body = {}) {
       ? admin.org.settings
       : {};
     const merged = { ...current, ...body.settings };
+    const dlpChanged = body.settings.dlp != null
+      && JSON.stringify(body.settings.dlp) !== JSON.stringify(current.dlp);
+    const packChanged = body.settings.policyPackId != null
+      && body.settings.policyPackId !== current.policyPackId;
+    if (dlpChanged || packChanged) {
+      patches.push('policy_version = policy_version + 1');
+    }
     if (body.settings.analytics && typeof body.settings.analytics === 'object') {
       const prevAnalytics = current.analytics && typeof current.analytics === 'object'
         ? current.analytics

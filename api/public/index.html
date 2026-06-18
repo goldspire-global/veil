@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Veil by Goldspire — secure sensitive text in email and web apps before you send. Client-side encryption for teams." />
-  <title>Veil — secure text before you send</title>
+  <meta name="description" content="Veil by Goldspire — browser-native protection for sensitive text in email and web apps. Encrypt before send, unlock in place." />
+  <title>Veil — protect sensitive text before you send</title>
   <link rel="stylesheet" href="portal/common.css" />
   <link rel="icon" href="portal/favicon.png" sizes="48x48" />
   <link rel="icon" href="portal/veil-mark.svg" type="image/svg+xml" />
@@ -23,11 +23,11 @@
     </header>
 
     <section class="hero card">
-      <p class="eyebrow">Browser security for email &amp; web</p>
-      <h1>Secure sensitive text before you hit send</h1>
+      <p class="eyebrow">Browser-native security for email &amp; web</p>
+      <h1>Protect sensitive text before it leaves the browser</h1>
       <p class="lede hero__lede">
-        Veil turns secrets into <code>[redacted]</code> or team tokens inline — encrypted in the browser.
-        Recipients unlock on the same page. Your server never sees plaintext.
+        Veil is a browser extension and team platform for securing secrets in Outlook, Gmail, and everyday web apps.
+        Replace API keys, credentials, and PII with <code>[redacted]</code> or team tokens — encrypted locally, sent as normal mail.
       </p>
       <div class="btn-row">
         <a class="btn" href="create.html" data-nav-create>Set up your team</a>
@@ -38,35 +38,51 @@
 
     <section class="grid-3">
       <div class="card card--flat">
-        <h2>Encrypt in place</h2>
-        <p>Highlight or paste an API key, card number, or password. Veil replaces it with <code>[redacted]</code> — teammates click to unlock.</p>
+        <h2>Secure in the compose window</h2>
+        <p>Highlight or paste a secret. Veil replaces it with <code>[redacted]</code> inline. Teammates with the extension click to unlock in the thread.</p>
       </div>
       <div class="card card--flat">
-        <h2>Tokenize for email</h2>
-        <p>Share <code>[veil:vt_…]</code> placeholders across Outlook, Gmail, and other clients. One click reveals for anyone in your org.</p>
+        <h2>Team tokens for email</h2>
+        <p>Share <code>[veil:vt_…]</code> placeholders across Outlook and Gmail. Org members reveal with one click — ciphertext stays in your Veil cloud, never plaintext.</p>
       </div>
       <div class="card card--flat">
-        <h2>Copilot on paste</h2>
-        <p>Veil detects sensitive data as you compose and offers Encrypt, Mask, or Tokenize before mistakes leave the browser.</p>
+        <h2>Veil copilot</h2>
+        <p>On paste and while typing, Veil flags sensitive data and offers Secure, Mask, or Tokenize — with clear reasons before you send.</p>
       </div>
+    </section>
+
+    <section class="card card--flat">
+      <h2>Recipients without the extension</h2>
+      <p>
+        Personal and one-time messages include a hosted
+        <a href="unlock.html" id="unlock-page-link">unlock page</a>.
+        Recipients open the link, enter the passphrase you shared separately, and read the secret in their browser — no install required.
+      </p>
+      <p class="hint">Team tokens and in-thread unlock require the Veil extension for org members.</p>
+    </section>
+
+    <section class="card card--flat">
+      <h2>Just for you?</h2>
+      <p>Install Veil for personal email and forms. Your passphrase stays in this browser; no admin or join code needed.</p>
+      <a class="btn btn--ghost" href="install.html">Use Veil personally</a>
     </section>
 
     <section class="card">
       <h2>How teams get started</h2>
       <ol class="steps">
-        <li><strong>Admin</strong> creates a team → receives a join code and admin key.</li>
-        <li><strong>Members</strong> install the Veil extension and join with work email.</li>
-        <li><strong>Everyone</strong> pastes or highlights secrets in Outlook / Gmail → secures inline → sends as normal.</li>
+        <li><strong>Admin</strong> creates a team and receives a join code and admin sign-in key.</li>
+        <li><strong>Members</strong> install Veil and join with work email.</li>
+        <li><strong>Everyone</strong> secures secrets in mail and web apps; admins review metadata-only activity and optional SIEM export.</li>
       </ol>
-      <p class="hint">IT can push the extension and team passphrase via Chrome or Edge policy — no manual join required.</p>
+      <p class="hint">IT can deploy the extension and team passphrase via Chrome or Edge policy — members skip manual setup.</p>
     </section>
 
     <section class="trust card card--flat">
       <h2>Security &amp; privacy</h2>
       <ul class="trust-list">
-        <li>Encryption runs locally in the browser (AES-GCM + PBKDF2).</li>
-        <li>Veil’s cloud API stores org membership and token ciphertext — not your secrets or passphrases.</li>
-        <li>Security events log metadata only (no matched content).</li>
+        <li>Encryption runs in the browser (AES-GCM + PBKDF2). Plaintext is not sent to Goldspire for secure or tokenize actions.</li>
+        <li>Veil’s cloud API stores org membership, token ciphertext, and security event metadata — not passphrases or message content.</li>
+        <li>Admins can forward events to a SIEM webhook; exports contain categories and counts, not matched text.</li>
       </ul>
       <div class="btn-row">
         <a class="btn btn--ghost btn--sm" href="privacy.html">Privacy policy</a>
@@ -83,6 +99,10 @@
     GoldspirePortalNav.renderPortalNav('index');
     GoldspirePortalNav.renderPortalFooter?.();
     (function () {
+      const unlockLink = document.getElementById('unlock-page-link');
+      const configured = window.GoldspirePortal?.UNLOCK_URL;
+      if (unlockLink && configured) unlockLink.href = configured;
+
       const session = GoldspirePortalApp.loadAdminSession?.();
       if (!session?.adminToken) return;
       document.querySelector('[data-nav-create]')?.remove();

@@ -269,19 +269,74 @@ function sendToActiveTab(action, payload = {}) {
 }
 
 // ── View switching ──────────────────────────────────────────────────────────
+function animateSetupStep(stepEl) {
+  if (!stepEl) return;
+  stepEl.classList.remove('setup-step--enter');
+  void stepEl.offsetWidth;
+  stepEl.classList.add('setup-step--enter');
+}
+
+function showSetupStep(step) {
+  const pick = document.getElementById('setup-step-pick');
+  const personal = document.getElementById('setup-step-personal');
+  const org = document.getElementById('setup-step-organization');
+  const progress = document.getElementById('setup-progress');
+
+  pick.hidden = step !== 'pick';
+  personal.hidden = step !== 'personal';
+  org.hidden = step !== 'organization';
+
+  if (progress) {
+    progress.hidden = step === 'pick';
+    progress.setAttribute('aria-hidden', step === 'pick' ? 'true' : 'false');
+    const dots = progress.querySelectorAll('.setup-progress__dot');
+    dots.forEach((dot, index) => {
+      dot.classList.toggle('setup-progress__dot--active', step !== 'pick' && index === 0);
+    });
+  }
+
+  const active = step === 'pick' ? pick : step === 'personal' ? personal : org;
+  animateSetupStep(active);
+}
+
 function showSetup() {
   viewSetup.hidden = false;
   viewMain.hidden = true;
-  document.getElementById('setup-step-pick').hidden = false;
-  document.getElementById('setup-step-personal').hidden = true;
-  document.getElementById('setup-step-organization').hidden = true;
+  viewSetup.classList.remove('view--enter');
+  void viewSetup.offsetWidth;
+  viewSetup.classList.add('view--enter');
+  showSetupStep('pick');
 }
 
 function showMain(profile) {
   viewSetup.hidden = true;
   viewMain.hidden = false;
+  viewMain.classList.remove('view--enter');
+  void viewMain.offsetWidth;
+  viewMain.classList.add('view--enter');
   applyProfileChrome(profile);
   refreshReadinessChecklist().catch(() => {});
+}
+
+function isOrgConnected(settings) {
+  return Boolean(settings.orgId && (
+    settings.orgProvisionSource === 'cloud'
+    || settings.orgProvisionSource === 'managed'
+    || managedState.hasTeamPassphrase
+    || managedState.skipOnboarding
+  ));
+}
+
+function switchTab(tabName) {
+  document.querySelectorAll('.tabs__btn').forEach((button) => {
+    const active = button.dataset.tab === tabName;
+    button.classList.toggle('tabs__btn--active', active);
+    button.setAttribute('aria-selected', active ? 'true' : 'false');
+  });
+  document.querySelectorAll('.tab').forEach((panel) => {
+    panel.classList.toggle('tab--active', panel.id === `tab-${tabName}`);
+  });
+  if (tabName === 'settings') loadSnoozedSites();
 }
 
 async function refreshReadinessChecklist() {
@@ -295,18 +350,21 @@ async function refreshReadinessChecklist() {
   const profile = settings.securityProfile || 'personal';
   const isOrg = profile === 'organization';
 
-  const items = [];
+  const required = [];
+  const recommended = [];
 
   if (isOrg) {
-    const connected = Boolean(settings.orgId && settings.orgProvisionSource === 'cloud');
-    items.push({
+    const connected = isOrgConnected(settings);
+    required.push({
       ok: connected,
       label: connected ? `Connected to ${settings.orgDisplayName || 'your team'}` : 'Join your team',
+      action: connected ? null : 'setup-org',
     });
   } else {
-    items.push({
+    required.push({
       ok: Boolean(settings.setupComplete),
       label: 'Personal setup complete',
+      action: null,
     });
   }
 
@@ -319,31 +377,65 @@ async function refreshReadinessChecklist() {
   } else {
     passphraseReady = hasStoredPassphrase || Boolean((await GoldspireSecrets.loadPassphrase?.('personal'))?.trim());
   }
-  items.push({
+  required.push({
     ok: passphraseReady,
     label: isOrg ? 'Team passphrase saved' : 'Passphrase saved',
+    action: passphraseReady ? null : 'settings-passphrase',
   });
 
   const copilotOn = settings.copilotEnabled === true;
-  items.push({
+  recommended.push({
     ok: copilotOn,
-    label: 'Veil copilot enabled',
+    label: 'Veil copilot (paste & highlight guard)',
+    action: copilotOn ? null : 'enable-copilot',
   });
 
-  list.innerHTML = items.map((item) => `
-    <li class="readiness__item${item.ok ? ' readiness__item--ok' : ''}">
-      <span class="readiness__icon" aria-hidden="true">${item.ok ? '✓' : '○'}</span>
-      <span>${item.label}</span>
-    </li>
-  `).join('');
+  const renderItem = (item, extraClass = '') => {
+    const icon = item.ok ? '✓' : '○';
+    if (!item.ok && item.action) {
+      return `
+        <li>
+          <button type="button" class="readiness__item readiness__item--action${extraClass}" data-readiness-action="${item.action}">
+            <span class="readiness__icon" aria-hidden="true">${icon}</span>
+            <span>${item.label}</span>
+          </button>
+        </li>`;
+    }
+    return `
+      <li class="readiness__item${item.ok ? ' readiness__item--ok' : ''}${extraClass}">
+        <span class="readiness__icon" aria-hidden="true">${icon}</span>
+        <span>${item.label}</span>
+      </li>`;
+  };
 
-  const allOk = items.every((item) => item.ok);
-  card.hidden = allOk;
+  list.innerHTML = [
+    ...required.map((item) => renderItem(item)),
+    ...recommended.map((item) => renderItem(item, ' readiness__item--recommended')),
+  ].join('');
+
+  list.querySelectorAll('[data-readiness-action]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const action = button.dataset.readinessAction;
+      if (action === 'settings-passphrase') switchTab('settings');
+      if (action === 'setup-org') {
+        showSetup();
+        showSetupStep('organization');
+      }
+      if (action === 'enable-copilot') enableBtn?.click();
+    });
+  });
+
+  const requiredOk = required.every((item) => item.ok);
+  card.hidden = requiredOk && recommended.every((item) => item.ok);
 
   if (hint) {
-    hint.textContent = allOk
-      ? ''
-      : 'After saving settings, refresh your mail tab (F5) so Veil picks up changes.';
+    if (requiredOk && !recommended.every((item) => item.ok)) {
+      hint.textContent = 'Recommended: turn on copilot so Veil catches secrets on paste.';
+    } else if (!requiredOk) {
+      hint.textContent = 'Tap an item above to finish setup. Refresh mail (F5) after saving passphrase.';
+    } else {
+      hint.textContent = '';
+    }
   }
 
   if (enableBtn) {
@@ -406,18 +498,12 @@ function getResecureChecked() {
 // ── Setup flow ──────────────────────────────────────────────────────────────
 document.querySelectorAll('.profile-card').forEach((card) => {
   card.addEventListener('click', () => {
-    const profile = card.dataset.profile;
-    document.getElementById('setup-step-pick').hidden = true;
-    document.getElementById(`setup-step-${profile}`).hidden = false;
+    showSetupStep(card.dataset.profile);
   });
 });
 
 document.querySelectorAll('[data-back]').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    document.getElementById('setup-step-pick').hidden = false;
-    document.getElementById('setup-step-personal').hidden = true;
-    document.getElementById('setup-step-organization').hidden = true;
-  });
+  btn.addEventListener('click', () => showSetupStep('pick'));
 });
 
 document.getElementById('setup-personal-passphrase')?.addEventListener('input', () => {
@@ -456,22 +542,39 @@ async function finishSetup(profile, extraSettings = {}, passphrase = '') {
 document.getElementById('setup-finish-personal')?.addEventListener('click', async () => {
   const passphrase = document.getElementById('setup-personal-passphrase').value.trim();
   const oneClick = document.getElementById('setup-personal-oneclick').checked;
+  const finishBtn = document.getElementById('setup-finish-personal');
 
-  if (passphrase) {
-    const a = GoldspirePassphrasePolicy?.assessPassphrase?.(passphrase, 'personal');
-    if (a && !a.ok) { showStatus(a.message); return; }
+  if (!passphrase) {
+    showStatus('Choose a passphrase to encrypt your secrets.');
+    document.getElementById('setup-personal-passphrase')?.focus();
+    return;
+  }
+
+  const a = GoldspirePassphrasePolicy?.assessPassphrase?.(passphrase, 'personal');
+  if (a && !a.ok) { showStatus(a.message); return; }
+
+  const prevLabel = finishBtn?.textContent;
+  if (finishBtn) {
+    finishBtn.disabled = true;
+    finishBtn.textContent = 'Saving…';
   }
 
   try {
     await finishSetup('personal', { useSavedPassphrase: oneClick }, passphrase);
   } catch (e) {
     showStatus(e?.message || 'Setup failed.');
+  } finally {
+    if (finishBtn) {
+      finishBtn.disabled = false;
+      finishBtn.textContent = prevLabel || 'Get started';
+    }
   }
 });
 
 document.getElementById('setup-org-connect')?.addEventListener('click', async () => {
   const joinCode = document.getElementById('setup-org-join-code')?.value.trim() || '';
   const email = document.getElementById('setup-org-email')?.value.trim().toLowerCase() || '';
+  const connectBtn = document.getElementById('setup-org-connect');
   if (!email) {
     showStatus('Enter your work email for secure sharing.');
     return;
@@ -481,10 +584,21 @@ document.getElementById('setup-org-connect')?.addEventListener('click', async ()
     return;
   }
 
+  const prevLabel = connectBtn?.textContent;
+  if (connectBtn) {
+    connectBtn.disabled = true;
+    connectBtn.textContent = 'Connecting…';
+  }
+
   try {
     await completeOrgMembership({ joinCode, email });
   } catch (error) {
     showStatus(error?.message || 'Could not join your team.');
+  } finally {
+    if (connectBtn) {
+      connectBtn.disabled = false;
+      connectBtn.textContent = prevLabel || 'Connect';
+    }
   }
 });
 
@@ -514,8 +628,7 @@ async function completeOrgMembership({ joinCode, email }) {
 
 function showPendingOrgSetup(settings = {}) {
   showSetup();
-  document.getElementById('setup-step-pick').hidden = true;
-  document.getElementById('setup-step-organization').hidden = false;
+  showSetupStep('organization');
   document.getElementById('setup-org-join-code').closest('.field').hidden = true;
   document.getElementById('setup-org-connect').textContent = 'Complete setup';
   const emailEl = document.getElementById('setup-org-email');
@@ -790,13 +903,7 @@ document.getElementById('org-passphrase')?.addEventListener('input', () => {
 
 // ── Tabs ────────────────────────────────────────────────────────────────────
 document.querySelectorAll('.tabs__btn').forEach((button) => {
-  button.addEventListener('click', () => {
-    document.querySelectorAll('.tabs__btn').forEach((b) => b.classList.remove('tabs__btn--active'));
-    document.querySelectorAll('.tab').forEach((t) => t.classList.remove('tab--active'));
-    button.classList.add('tabs__btn--active');
-    document.getElementById(`tab-${button.dataset.tab}`).classList.add('tab--active');
-    if (button.dataset.tab === 'settings') loadSnoozedSites();
-  });
+  button.addEventListener('click', () => switchTab(button.dataset.tab));
 });
 
 // ── Home actions ──────────────────────────────────────────────────────────

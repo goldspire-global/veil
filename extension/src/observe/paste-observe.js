@@ -104,11 +104,12 @@
   }) {
     return new Promise((resolve) => {
       global.GoldspireVeilCopilot?.showCopilotPrompt?.({
-        title: title || (alreadyInserted ? 'Sensitive data detected' : 'Sensitive data pasted'),
+        title: title || global.GoldspireVeilExplain?.buildTriggerLabel?.(context, alreadyInserted),
         subtitle,
         detections,
         context,
         settings,
+        alreadyInserted,
         onDismiss: () => resolve({ dismissed: true }),
         onAction: async (actionId) => {
           const selectionContext = alreadyInserted && match

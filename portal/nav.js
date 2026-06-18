@@ -59,6 +59,7 @@
       <a href="privacy.html">Privacy</a>
       <a href="terms.html">Terms</a>
       <a href="install.html">Install</a>
+      <a href="unlock.html">Unlock page</a>
       <a href="mailto:support@goldspireventures.com">Support</a>
     `;
   }

@@ -76,6 +76,22 @@
         </form>
       </div>
 
+      <div class="card" id="dlp-card">
+        <h2>Data protection</h2>
+        <p class="lede">Choose a policy pack for your org. Members receive updates on their next extension sync. Metadata-only security events appear below.</p>
+        <form id="dlp-form">
+          <div class="field">
+            <label for="dlp-pack">Policy pack</label>
+            <select id="dlp-pack"></select>
+            <div class="hint" id="dlp-pack-desc"></div>
+          </div>
+          <div class="btn-row">
+            <button type="submit" class="btn btn--sm">Apply policy pack</button>
+          </div>
+        </form>
+        <p class="hint" id="dlp-current"></p>
+      </div>
+
       <div class="card">
         <h2>Join codes</h2>
         <p class="lede">Share a code so members can connect the browser extension.</p>
@@ -155,7 +171,7 @@
 
       <div class="card">
         <h2>Sub-teams</h2>
-        <p class="lede">Per-team DLP policy overlays for members.</p>
+        <p class="lede">Optional stricter rules for a group. Use a policy pack or custom JSON overlay.</p>
         <form id="create-team-form" class="btn-row" style="align-items:flex-end;">
           <div class="field" style="flex:1;margin:0;">
             <label for="team-name">Team name</label>
@@ -187,6 +203,7 @@
   <script src="portal/config.js"></script>
   <script src="portal/app.js"></script>
   <script src="portal/nav.js"></script>
+  <script src="portal/policy-packs.js"></script>
   <script>
     GoldspirePortalNav.renderPortalNav('admin');
     GoldspirePortalNav.renderPortalFooter?.();
@@ -206,6 +223,41 @@
       }
       return options.join('');
     }
+
+    function syncDomainsRow() {
+      const policy = document.getElementById('settings-membership-policy')?.value || 'invite';
+      const row = document.getElementById('domains-row');
+      if (row) row.hidden = policy !== 'domain';
+    }
+
+    function renderDlpPackOptions(selectedId) {
+      const select = document.getElementById('dlp-pack');
+      const desc = document.getElementById('dlp-pack-desc');
+      if (!select || !window.GoldspirePolicyPacks) return;
+      const packs = GoldspirePolicyPacks.list();
+      select.innerHTML = packs.map((pack) => `
+        <option value="${pack.id}"${pack.id === selectedId ? ' selected' : ''}>${pack.label}</option>
+      `).join('');
+      const updateDesc = () => {
+        const pack = GoldspirePolicyPacks.get(select.value);
+        if (desc) desc.textContent = pack?.description || '';
+      };
+      select.onchange = updateDesc;
+      updateDesc();
+    }
+
+    function renderDlpStatus(org) {
+      const current = document.getElementById('dlp-current');
+      if (!current) return;
+      const packId = org.settings?.policyPackId || 'observational';
+      const pack = GoldspirePolicyPacks?.get?.(packId);
+      const enforced = org.settings?.dlp?.enabled === true;
+      current.textContent = pack
+        ? `Active: ${pack.label}${enforced ? ' (enforced)' : ' (copilot only)'}. Policy version ${org.policyVersion || 1}.`
+        : '';
+    }
+
+    document.getElementById('settings-membership-policy')?.addEventListener('change', syncDomainsRow);
 
     function showDashboard(show) {
       loginCard.classList.toggle('hidden', show);
@@ -231,6 +283,9 @@
         document.getElementById('settings-membership-policy').value = org.settings?.membershipPolicy || 'invite';
         document.getElementById('settings-domains').value = (org.settings?.allowedEmailDomains || []).join(', ');
         document.getElementById('siem-url').value = org.settings?.analytics?.siemWebhookUrl || '';
+        syncDomainsRow();
+        renderDlpPackOptions(org.settings?.policyPackId || (org.settings?.dlp?.enabled ? 'finance' : 'observational'));
+        renderDlpStatus(org);
 
         const codesBody = document.getElementById('codes-body');
         codesBody.innerHTML = codes.joinCodes.map((row) => `
@@ -306,10 +361,11 @@
         const summary = await app.apiAdmin(`/v1/orgs/me/security-events/summary?days=${days}`);
         const t = summary.totals || {};
         const stat = (label, value) => `
-          <div style="padding:12px;border:1px solid #e5e7eb;border-radius:8px;">
-            <div style="font-size:1.4rem;font-weight:600;">${value}</div>
+          <div class="stat-tile">
+            <div class="stat-tile__value">${value}</div>
             <div class="hint">${label}</div>
           </div>`;
+        statsEl.className = 'stat-grid';
         statsEl.innerHTML = [
           stat('Total', t.total || 0),
           stat('Detections', t.detections || 0),
@@ -335,7 +391,7 @@
             <td>${team.memberCount || 0}</td>
             <td>${app.formatWhen(team.createdAt)}</td>
             <td>
-              <button type="button" class="btn btn--ghost btn--sm" data-edit-team-dlp="${team.teamId}">DLP overlay</button>
+              <button type="button" class="btn btn--ghost btn--sm" data-edit-team-dlp="${team.teamId}">Policy overlay</button>
             </td>
           </tr>
         `).join('')
@@ -385,6 +441,29 @@
         document.getElementById('team-name').value = '';
         app.setStatus(dashStatus, 'Team created.', 'ok');
         await loadTeams();
+      } catch (error) {
+        app.setStatus(dashStatus, error.message, 'error');
+      }
+    });
+
+    document.getElementById('dlp-form')?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const packId = document.getElementById('dlp-pack')?.value || 'observational';
+      const pack = GoldspirePolicyPacks?.get?.(packId);
+      if (!pack) return;
+      try {
+        await app.apiAdmin('/v1/orgs/me', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            settings: {
+              dlp: pack.dlp,
+              policyPackId: pack.id,
+            },
+          }),
+        });
+        app.setStatus(dashStatus, `${pack.label} policy applied. Members sync on next extension open.`, 'ok');
+        await loadDashboard();
       } catch (error) {
         app.setStatus(dashStatus, error.message, 'error');
       }
@@ -529,6 +608,27 @@
       try {
         if (teamDlpId) {
           const team = cachedTeams.find((row) => row.teamId === teamDlpId);
+          const packIds = GoldspirePolicyPacks?.list?.().map((p) => p.id).join(', ') || '';
+          const packChoice = window.prompt(
+            `Policy overlay for ${team?.name || 'team'}.\nEnter a pack id (${packIds}) or leave blank to edit JSON:`,
+            team?.settings?.policyPackId || '',
+          );
+          if (packChoice == null) return;
+          if (packChoice.trim()) {
+            const pack = GoldspirePolicyPacks?.get?.(packChoice.trim());
+            if (!pack) {
+              app.setStatus(dashStatus, 'Unknown policy pack.', 'error');
+              return;
+            }
+            await app.apiAdmin(`/v1/orgs/me/teams/${encodeURIComponent(teamDlpId)}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ settings: { dlp: pack.dlp, policyPackId: pack.id } }),
+            });
+            app.setStatus(dashStatus, `${pack.label} overlay applied to team.`, 'ok');
+            await loadTeams();
+            return;
+          }
           const template = JSON.stringify({
             enabled: true,
             categories: {

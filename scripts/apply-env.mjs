@@ -49,6 +49,7 @@ const orgPortalUrl = env.ORG_PORTAL_URL ?? '';
 const unlockUrl = env.BUILT_IN_PUBLIC_UNLOCK_URL ?? 'https://goldspire-global.github.io/secure-text/unlock.html';
 const syncMinutes = Number(env.ORG_SYNC_INTERVAL_MINUTES) || 360;
 const portalOriginValue = portalOrigin(orgPortalUrl);
+const portalUnlockUrl = unlockUrl;
 
 const constantsContents = `/**
  * Built-in defaults shipped with the extension (no user setup required).
@@ -85,6 +86,7 @@ const portalConfigContents = `/**
     API_BASE: ${jsString(orgApiBase)},
     PORTAL_URL: ${jsString(orgPortalUrl)},
     PORTAL_ORIGIN: ${jsString(portalOriginValue)},
+    UNLOCK_URL: ${jsString(portalUnlockUrl)},
   };
 })(typeof globalThis !== 'undefined' ? globalThis : self);
 `;
@@ -93,8 +95,19 @@ writeFileSync(constantsPath, constantsContents);
 writeFileSync(portalConfigPath, portalConfigContents);
 
 mkdirSync(join(apiPublicDir, 'portal'), { recursive: true });
-for (const file of ['common.css', 'app.js', 'config.js', 'nav.js', 'veil-mark.svg', 'favicon.png']) {
+for (const file of ['common.css', 'app.js', 'config.js', 'nav.js', 'policy-packs.js', 'veil-mark.svg', 'favicon.png']) {
   cpSync(join(repoRoot, 'portal', file), join(apiPublicDir, 'portal', file), { force: true });
+}
+const unlockAssets = ['unlock.html', 'unlock.css', 'unlock.js'];
+for (const file of unlockAssets) {
+  const src = join(repoRoot, file);
+  if (existsSync(src)) {
+    cpSync(src, join(apiPublicDir, file), { force: true });
+  }
+}
+const iconsDir = join(repoRoot, 'icons');
+if (existsSync(iconsDir)) {
+  cpSync(iconsDir, join(apiPublicDir, 'icons'), { force: true, recursive: true });
 }
 for (const page of [
   'index.html',
