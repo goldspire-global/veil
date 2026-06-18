@@ -64,7 +64,7 @@ Ideas that extend the positioning without copying enterprise DLP:
 
 | Idea | Why it matters |
 |------|----------------|
-| **Recipient unlock link** (no extension) | External recipients unlock via Goldspire-hosted page — huge for “secure text to anyone” |
+| **Recipient unlock link** (no extension) | External recipients unlock via Veil-hosted page — huge for “encrypted share to anyone” |
 | **Typing copilot** | Debounced detect while composing, not only on paste |
 | **Policy packs** | Finance / healthcare / eng secret detectors as one-click org presets |
 | **SIEM webhook** | Security events → Splunk/Datadog; metadata-only story for CISO |

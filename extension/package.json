@@ -1,5 +1,5 @@
 {
-  "name": "@goldspire/secure-text-extension",
+  "name": "@goldspire/veil-extension",
   "version": "1.0.0",
   "private": true,
   "description": "Browser extension to secure highlighted text inline with a shared passphrase.",

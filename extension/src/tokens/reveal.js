@@ -24,7 +24,7 @@
   function shouldSkipTextNode(node) {
     const parent = node.parentElement;
     if (!parent) return true;
-    if (parent.closest('script,style,textarea,input,option,noscript,code,#goldspire-secure-text-prompt')) {
+    if (parent.closest('script,style,textarea,input,option,noscript,code,#goldspire-veil-prompt')) {
       return true;
     }
     if (parent.closest('.gst-veil-token-btn, .gst-veil-revealed')) return true;

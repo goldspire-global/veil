@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const envPath = join(repoRoot, '.env');
 const constantsPath = join(repoRoot, 'extension', 'src', 'constants.js');
+const rootConstantsPath = join(repoRoot, 'constants.js');
 const portalConfigPath = join(repoRoot, 'portal', 'config.js');
 const apiPublicDir = join(repoRoot, 'api', 'public');
 
@@ -46,7 +47,7 @@ if (!existsSync(envPath)) {
 const env = parseEnv(readFileSync(envPath, 'utf8'));
 const orgApiBase = env.ORG_API_BASE ?? '';
 const orgPortalUrl = env.ORG_PORTAL_URL ?? '';
-const unlockUrl = env.BUILT_IN_PUBLIC_UNLOCK_URL ?? 'https://goldspire-global.github.io/secure-text/unlock.html';
+const unlockUrl = env.BUILT_IN_PUBLIC_UNLOCK_URL ?? 'https://goldspire-global.github.io/veil/unlock.html';
 const syncMinutes = Number(env.ORG_SYNC_INTERVAL_MINUTES) || 360;
 const portalOriginValue = portalOrigin(orgPortalUrl);
 const portalUnlockUrl = unlockUrl;
@@ -67,7 +68,7 @@ const constantsContents = `/**
       organization: 600_000,
     },
     /** Suggested shared vault item title for IT documentation. */
-    TEAM_VAULT_ITEM_LABEL: 'Goldspire Team Passphrase',
+    TEAM_VAULT_ITEM_LABEL: 'Veil Team Passphrase',
     /** Cloud org API base (no trailing slash). Empty = cloud join disabled. */
     ORG_API_BASE: ${jsString(orgApiBase)},
     /** Organization sign-in / join portal. */
@@ -92,6 +93,7 @@ const portalConfigContents = `/**
 `;
 
 writeFileSync(constantsPath, constantsContents);
+writeFileSync(rootConstantsPath, constantsContents);
 writeFileSync(portalConfigPath, portalConfigContents);
 
 mkdirSync(join(apiPublicDir, 'portal'), { recursive: true });
@@ -123,5 +125,6 @@ for (const page of [
 }
 
 console.log(`Applied .env → ${constantsPath}`);
+console.log(`Applied .env → ${rootConstantsPath}`);
 console.log(`Applied .env → ${portalConfigPath}`);
 console.log(`Synced portal pages → ${apiPublicDir}`);

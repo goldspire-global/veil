@@ -1,12 +1,12 @@
-# Setup on a new machine
+# Veil by Goldspire — setup on a new machine
 
-Repo: **https://github.com/goldspire-global/secure-text**
+Repo: **https://github.com/goldspire-global/veil**
 
 ## 1. Clone
 
 ```bash
-git clone https://github.com/goldspire-global/secure-text.git
-cd secure-text
+git clone https://github.com/goldspire-global/veil.git
+cd veil
 ```
 
 ## 2. Configure `.env`
@@ -20,9 +20,9 @@ Edit **`.env`** in the repo root:
 
 | Variable | Dev value | Production |
 |----------|-----------|------------|
-| `ORG_API_BASE` | `http://localhost:3015` | e.g. `https://secure-text-api.goldspireventures.com` |
-| `ORG_PORTAL_URL` | `http://localhost:3015/secure-text/join` | e.g. `https://join-secure-text.goldspireventures.com/join.html` |
-| `BUILT_IN_PUBLIC_UNLOCK_URL` | `https://goldspire-global.github.io/secure-text/unlock.html` | Same (GitHub Pages) |
+| `ORG_API_BASE` | `http://localhost:3015` | e.g. `https://veil-api.goldspireventures.com` |
+| `ORG_PORTAL_URL` | `http://localhost:3015/veil/join` | e.g. `https://join-veil.goldspireventures.com/join.html` |
+| `BUILT_IN_PUBLIC_UNLOCK_URL` | `https://goldspire-global.github.io/veil/unlock.html` | Same (GitHub Pages) |
 
 ## 3. Apply config to the extension
 
@@ -100,7 +100,7 @@ No email service required — delivery is extension ↔ API ↔ extension.
 
 ## 6. Build & publish unlock page (optional)
 
-Updates **https://goldspire-global.github.io/secure-text/unlock.html**
+Updates **https://goldspire-global.github.io/veil/unlock.html**
 
 ```bash
 npm.cmd run build    # Windows

@@ -4,7 +4,7 @@ Draft copy for Veil extension store submissions.
 
 ## Name
 
-**Veil — secure text by Goldspire**
+**Veil by Goldspire**
 
 ## Short description (132 chars max)
 
@@ -35,11 +35,11 @@ Productivity
 - **storage** — Save settings and encrypted passphrase locally
 - **activeTab** — Act on text you select on the current page
 - **clipboardWrite** — Copy generated passwords and unlock results
-- **host_permissions (all_urls)** — Inject secure-text UI in email and web compose surfaces you use
+- **host_permissions (all_urls)** — Inject Veil UI in email and web compose surfaces you use
 
 ## Privacy policy URL
 
-`https://join-secure-text.goldspireventures.com/privacy.html` (update to your hosted URL)
+`https://join-veil.goldspireventures.com/privacy.html` (update to your hosted URL)
 
 ## Support URL
 

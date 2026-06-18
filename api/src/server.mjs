@@ -143,7 +143,7 @@ const server = createServer(async (req, res) => {
 
   try {
     if (req.method === 'GET' && pathname === '/health') {
-      json(res, req, 200, { ok: true, service: 'goldspire-secure-text-api' });
+      json(res, req, 200, { ok: true, service: 'veil-api' });
       return;
     }
 
@@ -396,7 +396,11 @@ const server = createServer(async (req, res) => {
       }
     }
 
-    if (req.method === 'GET' && (pathname === '/secure-text/join' || pathname.startsWith('/secure-text/join/'))) {
+    const joinPaths = ['/veil/join', '/secure-text/join'];
+    if (
+      req.method === 'GET'
+      && joinPaths.some((p) => pathname === p || pathname.startsWith(`${p}/`))
+    ) {
       if (serveStatic('join.html', res)) return;
     }
 
@@ -438,7 +442,7 @@ const server = createServer(async (req, res) => {
 
 server.listen(port, '0.0.0.0', () => {
   console.log(`Goldspire org API listening on port ${port}`);
-  console.log(`Join portal: http://localhost:${port}/secure-text/join`);
+  console.log(`Join portal: http://localhost:${port}/veil/join`);
 });
 
 for (const signal of ['SIGINT', 'SIGTERM']) {

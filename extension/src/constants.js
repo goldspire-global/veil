@@ -5,7 +5,7 @@
 (function (global) {
   global.GoldspireConstants = {
     /** Gmail/Outlook persist https links in sent mail; extension users unlock via in-page modal. */
-    BUILT_IN_PUBLIC_UNLOCK_URL: "https://goldspire-global.github.io/secure-text/unlock.html",
+    BUILT_IN_PUBLIC_UNLOCK_URL: "https://goldspire-global.github.io/veil/unlock.html",
     /** One-time codes expire after this window (envelope `exp`). */
     ONE_TIME_TTL_MS: 72 * 60 * 60 * 1000,
     /** PBKDF2-SHA256 iterations (OWASP 2023 guidance for SHA-256). */
@@ -14,11 +14,11 @@
       organization: 600_000,
     },
     /** Suggested shared vault item title for IT documentation. */
-    TEAM_VAULT_ITEM_LABEL: 'Goldspire Team Passphrase',
+    TEAM_VAULT_ITEM_LABEL: 'Veil Team Passphrase',
     /** Cloud org API base (no trailing slash). Empty = cloud join disabled. */
-    ORG_API_BASE: "https://secure-text-api.goldspireventures.com",
+    ORG_API_BASE: "https://veil-api.goldspireventures.com",
     /** Organization sign-in / join portal. */
-    ORG_PORTAL_URL: "https://join-secure-text.goldspireventures.com/join.html",
+    ORG_PORTAL_URL: "https://join-veil.goldspireventures.com/join.html",
     /** Alarm interval for cloud policy sync (minutes). */
     ORG_SYNC_INTERVAL_MINUTES: 360,
   };

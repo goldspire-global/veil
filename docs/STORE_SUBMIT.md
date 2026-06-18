@@ -20,7 +20,7 @@ Output:
 3. Fill listing (see `STORE_LISTING.md`)
 4. **Privacy**
    - Single purpose: secure sensitive text in web apps
-   - Policy URL: `https://join-secure-text.goldspireventures.com/privacy.html`
+   - Policy URL: `https://join-veil.goldspireventures.com/privacy.html`
 5. **Permissions justification** — paste from `STORE_LISTING.md`
 6. **Screenshots** (1280×800 or 640×400) — capture:
    - Popup with green setup checklist

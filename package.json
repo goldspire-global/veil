@@ -1,8 +1,8 @@
 {
-  "name": "goldspire-secure-text",
+  "name": "goldspire-veil",
   "version": "1.0.0",
   "private": true,
-  "description": "Goldspire Secure Text browser extension + hosted unlock page",
+  "description": "Veil by Goldspire — browser extension + hosted unlock page",
   "type": "module",
   "scripts": {
     "env:apply": "node scripts/apply-env.mjs",

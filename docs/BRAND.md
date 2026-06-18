@@ -30,6 +30,22 @@
 - **Store** — upload `icon-128.png` as primary; 1280×800 screenshots use same palette
 - **Do not** stretch the icon; keep square with rounded corners as designed
 
+## Canonical URLs
+
+| Service | URL |
+|---------|-----|
+| Organization portal | `https://join-veil.goldspireventures.com` |
+| Org API | `https://veil-api.goldspireventures.com` |
+| Public unlock page | `https://goldspire-global.github.io/veil/unlock.html` |
+| GitHub repo | `https://github.com/goldspire-global/veil` |
+| Stripe webhook | `https://veil-api.goldspireventures.com/v1/webhooks/stripe` |
+
+Local dev join path: `http://localhost:3015/veil/join`
+
+The API still serves `/secure-text/join` until old bookmarks expire. Retire `join-secure-text` and `secure-text-api` DNS once redirects are in place.
+
+User-facing name is always **Veil** or **Veil by Goldspire**. Goldspire is the vendor, not the product.
+
 ## Regenerating icons
 
 After updating `brand/veil-mark.svg` or source art:

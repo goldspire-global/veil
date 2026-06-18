@@ -31,7 +31,7 @@
 
   function builtInPublicUnlockUrl() {
     return global.GoldspireConstants?.BUILT_IN_PUBLIC_UNLOCK_URL
-      || 'https://goldspire-global.github.io/secure-text/unlock.html';
+      || 'https://goldspire-global.github.io/veil/unlock.html';
   }
 
   /** Custom org URL if set; otherwise the Goldspire-hosted page (zero setup). */

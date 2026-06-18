@@ -1,6 +1,6 @@
 # Threat model (v1)
 
-This document summarizes how **Goldspire Secure Text** protects secrets, what the server can/can’t see, and what assumptions security reviewers should validate.
+This document summarizes how **Veil by Goldspire** protects secrets, what the server can/can’t see, and what assumptions security reviewers should validate.
 
 ## Goals
 
@@ -79,7 +79,7 @@ The server **does not** receive:
 - Verify server logs do not include secrets.
 - Distribute signed builds (Chrome Web Store or enterprise policy).
 
-# Threat model — Goldspire Secure Text
+# Threat model — Veil by Goldspire
 
 This document explains what the extension **does** and **does not** protect against. Share it with your team before rolling out.
 
@@ -153,7 +153,7 @@ Reads plaintext after legitimate unlock. **Not mitigated** — use re-lock timer
 
 ## Recommended operating procedures
 
-1. **One shared vault item** — e.g. `Goldspire Team Passphrase`, 20+ random characters
+1. **One shared vault item** — e.g. `Veil Team Passphrase`, 20+ random characters
 2. Choose **external vault** or **store locally** per your security policy
 3. Use **Organization** security profile for stricter defaults
 4. Prefer **one-time mode** for external recipients or single-use secrets

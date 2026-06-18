@@ -12,7 +12,7 @@
     const script = document.createElement('script');
     script.src = `${base}${files[index]}`;
     script.onload = () => loadNext(index + 1);
-    script.onerror = () => alert('Goldspire Secure Text: could not load unlock tools. Reload the extension.');
+    script.onerror = () => alert('Veil: could not load unlock tools. Reload the extension.');
     document.head.appendChild(script);
   }
 

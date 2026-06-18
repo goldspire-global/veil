@@ -4,7 +4,7 @@ For IT admins and team owners setting up **Veil by Goldspire**.
 
 ## 1. Create your team
 
-1. Open your Veil portal (e.g. `https://join-secure-text.goldspireventures.com/`)
+1. Open your Veil portal (e.g. `https://join-veil.goldspireventures.com/`)
 2. Click **Set up your team**
 3. Enter team name, your work email, company domain (optional), and a **team passphrase** (12+ characters)
 4. Save the **admin sign-in key** and **join code** — the admin key is shown once only

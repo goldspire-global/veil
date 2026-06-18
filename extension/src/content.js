@@ -1841,7 +1841,7 @@
       runSafe(handleCommand(event.data));
       return;
     }
-    if (event.source !== window || event.data?.source !== 'goldspire-secure-text-extension') return;
+    if (event.source !== window || event.data?.source !== 'goldspire-veil-extension') return;
     runSafe(handleCommand(event.data));
   });
 

@@ -1,4 +1,4 @@
--- Cloud org provisioning schema for Goldspire Secure Text extension
+-- Cloud org provisioning schema for Veil by Goldspire
 
 CREATE TABLE IF NOT EXISTS organizations (
   id TEXT PRIMARY KEY,

@@ -35,10 +35,10 @@ function zipDist() {
 zipDist();
 
 const listing = {
-  name: 'Veil — secure text by Goldspire',
+  name: 'Veil by Goldspire',
   version,
   zip: zipName,
-  privacyPolicy: 'https://join-secure-text.goldspireventures.com/privacy.html',
+  privacyPolicy: 'https://join-veil.goldspireventures.com/privacy.html',
   submit: {
     chrome: 'https://chrome.google.com/webstore/devconsole',
     edge: 'https://partner.microsoft.com/dashboard/microsoftedge/overview',

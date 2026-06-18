@@ -45,7 +45,7 @@ npm run build
 
 Packages `extension/dist/` and copies the unlock bundle to this repo root. Commit and push to update:
 
-**https://goldspire-global.github.io/secure-text/unlock.html**
+**https://goldspire-global.github.io/veil/unlock.html**
 
 ## Docs
 

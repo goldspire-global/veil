@@ -1,6 +1,6 @@
 (function (global) {
-  const PROMPT_ID = 'goldspire-secure-text-prompt';
-  const TOAST_ID = 'goldspire-secure-text-toast';
+  const PROMPT_ID = 'goldspire-veil-prompt';
+  const TOAST_ID = 'goldspire-veil-toast';
   let activePromptKeyHandler = null;
 
   function escapeHtml(value) {

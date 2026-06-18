@@ -10,7 +10,7 @@ Use this before calling MVP (Sprint 12) complete.
 - [ ] Enable copilot → paste test card → Encrypt / Mask / Allow prompt
 - [ ] Selection copilot bar on sensitive highlight in compose field
 - [ ] ChatGPT / Claude / Gemini / Copilot / Perplexity submit intercept (Sanitize / Block / Continue)
-- [ ] Existing Secure Text flows unchanged: highlight → [redacted], unlock, org share
+- [ ] Existing Veil flows unchanged: highlight → [redacted], unlock, org share
 - [ ] `npm test` passes
 
 ## Org + API

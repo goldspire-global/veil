@@ -27,7 +27,7 @@
   },
   "browser_specific_settings": {
     "gecko": {
-      "id": "goldspire-secure-text@studio.goldspire",
+      "id": "goldspire-veil@studio.goldspire",
       "strict_min_version": "128.0"
     }
   },
@@ -37,7 +37,7 @@
       "http://localhost:8788/*",
       "https://goldspire.studio/*",
       "https://*.goldspire.studio/*",
-      "https://join-secure-text.goldspireventures.com/*",
+      "https://join-veil.goldspireventures.com/*",
       "https://*.goldspireventures.com/*"
     ]
   },

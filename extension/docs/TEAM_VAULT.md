@@ -26,8 +26,8 @@ For teams that keep the passphrase **only** in a password manager:
 **IT setup (any password manager):**
 
 - Create a shared **Login** item
-- **Title:** e.g. `Goldspire Team Passphrase`
+- **Title:** e.g. `Veil Team Passphrase`
 - **Password:** your shared team secret (16+ characters)
-- **Websites:** add every site where staff secure text
+- **Websites:** add every site where staff use Veil
 
 Goldspire does not integrate with a specific vault product.

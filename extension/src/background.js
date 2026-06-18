@@ -295,7 +295,7 @@ async function dispatchToTab(tabId, frameId, message, retried = false) {
         if (typeof window.__goldspireHandleCommand === 'function') {
           return window.__goldspireHandleCommand({ ...payload, silent: true });
         }
-        window.postMessage({ ...payload, source: 'goldspire-secure-text-extension', silent: true }, '*');
+        window.postMessage({ ...payload, source: 'goldspire-veil-extension', silent: true }, '*');
         return { ok: true, relayed: true };
       },
       args: [message],

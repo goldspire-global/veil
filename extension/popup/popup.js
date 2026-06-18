@@ -1155,6 +1155,6 @@ loadSettings().catch(() => showStatus('Could not load settings.'));
 const helpPortalLink = document.getElementById('help-portal-link');
 if (helpPortalLink && typeof GoldspireConstants !== 'undefined') {
   const portal = GoldspireConstants.ORG_PORTAL_URL || '';
-  helpPortalLink.href = portal.replace(/join\.html.*$/i, 'index.html') || 'https://join-secure-text.goldspireventures.com/index.html';
+  helpPortalLink.href = portal.replace(/join\.html.*$/i, 'index.html') || 'https://join-veil.goldspireventures.com/index.html';
 }
 refreshSelectionPreview();

@@ -25,7 +25,7 @@ Restrict who can edit extension policies in your MDM/GPO console. The passphrase
 Find it after install:
 
 1. `chrome://extensions` or `edge://extensions`
-2. Developer mode → **Goldspire Secure Text** → **Details**
+2. Developer mode → **Veil** → **Details**
 3. Copy **Extension ID** (32-character string)
 
 Use this ID in the registry paths below as `{extension_id}`.
