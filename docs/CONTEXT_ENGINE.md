@@ -1,77 +1,77 @@
-# Context engine (internal)
+# Detection rules (internal)
 
-Honest description of how Veil decides **what** something is before DLP policy runs.
+How Veil decides **what** a string might be, and **whether** to prompt — stated plainly.
 
-## Not machine learning
+## What this is
 
-The context engine is a **deterministic pipeline**: regex detectors + field semantics + intent heuristics. It does not learn from customer data. Configuration is:
+A **fixed rule pipeline** shipped with the extension:
 
-- **Code** — patterns in `intent-config.js`, detectors in `lib-bundle.js`, semantics in `field-semantics.js`
-- **Runtime DOM** — labels, placeholders, `autocomplete`, form presence, URL host/path
-- **Org policy** — applied **after** detection in `GoldspirePolicyEngine.evaluate()` (warn/block only)
+1. Regex detectors (`lib-bundle.js`, detector modules) — pattern match only
+2. **Product rules** (`intent-config.js`) — host/path intent, field-label semantics, gating thresholds
+3. Runtime DOM signals — labels, `autocomplete`, form presence (inputs to the rules above)
+4. **Org DLP** (`organizations.settings.dlp`) — warn/block **after** a detection is accepted; does not change detectors
 
-If a string looks like multiple things (e.g. `2193825B` = Irish PPS vs partial IBAN), disambiguation uses **field semantics**, not a second hardcoded guess inside the IBAN detector.
+There is **no machine learning**, no hidden model, and no org-editable detection rules today.
+
+## Single source of truth for product rules
+
+**`extension/src/detection/intent-config.js`** — edit here for:
+
+| Section | Purpose | Customer configurable? |
+|---------|---------|------------------------|
+| `mailHostPattern`, `formPathPattern`, … | Where compose vs form vs admin | No — product-locked |
+| `fieldSemantics[]` | Label/autocomplete → suppress/prefer categories | No — product-locked |
+| `disambiguation` | PPS shape, IBAN prefix, confidence bypass | No — product-locked |
+| `gating` | Which categories can interrupt copilot | No — product-locked |
+| `piiLabelPattern`, `piiAutocomplete` | Form expects PII | No — product-locked |
+
+**`field-semantics.js`** and **`gating.js`** only **read** `intent-config.js`. They do not define their own rules.
+
+**`context-resolve.js`** applies field semantics + structural rules from config — not a separate “engine”.
 
 ## Pipeline
 
 ```
 DOM target
   → observe/context.js (field hints, intent)
-  → field-semantics.js (label → expected categories)
-  → engine.analyze() (regex detectors)
-  → context-resolve.js (suppress/prefer by semantics)
-  → gating.js (copilot / DLP prompts)
-  → policy engine (org pack: warn/block)
+  → field-semantics.js (compiles intent-config.fieldSemantics)
+  → engine.analyze() (regex detectors — lib-bundle.js)
+  → context-resolve.js (suppress/prefer per config)
+  → gating.js (copilot thresholds per intent-config.gating)
+  → policy engine (org pack: warn/block only)
 ```
 
-## Field semantics (`field-semantics.js`)
+## PPS vs IBAN (example)
 
-Declarative rules map labels/autocomplete to:
+| Input | Field label | Raw detectors | After rules |
+|-------|-------------|---------------|-------------|
+| `2193825B` | PPS Number | `national_id`, maybe `iban` | `national_id` — gov-id field + no `IE…` prefix |
+| `IE29AIBK93115212345678` | Bank account | `iban` | `iban` |
+| `stafford` | First name | `swift_bic` | Suppressed — person_name semantics |
 
-- `suppressCategories` — unlikely in this field (e.g. `swift_bic` in a name field)
-- `preferCategories` — likely in this field (e.g. `national_id` when label says PPS)
+## What customers can configure
 
-| Semantic id | Example labels | Effect |
-|-------------|----------------|--------|
-| `person_name` | First name, Student name | Suppress api_key, SWIFT, IBAN in name fields |
-| `government_id` | PPS, SSN, National ID | Prefer national_id; suppress IBAN without country prefix |
-| `payment_account` | IBAN, Sort code, SWIFT | Prefer payment categories; suppress national_id when value looks like IBAN |
-| `contact` | Email, Phone | Prefer email/phone |
-| `secret_credential` | API key, Token, Password | Prefer secrets; suppress PII false positives |
+| Layer | Configurable via admin? |
+|-------|-------------------------|
+| Detection patterns | No |
+| Field-label disambiguation | No |
+| Copilot on/off, secure mode | Extension settings |
+| Warn / block / allow per category | Policy packs + DLP JSON |
+| SIEM webhook | Org admin |
 
-Semantics are **data-driven in one file** — add a label pattern there instead of patching individual detectors.
+Do not describe detection as “context-aware AI” in user-facing copy. Say **rules based on field labels and patterns**.
 
-## PPS vs IBAN example
+## Extending (developers)
 
-| Input | Field label | Detector hits | After context-resolve |
-|-------|-------------|---------------|------------------------|
-| `2193825B` | PPS Number | `national_id`, maybe `iban` | `national_id` only — no `IE` prefix, gov-id field |
-| `IE29AIBK93115212345678` | Bank account | `iban` | `iban` kept |
-| `stafford` | First name | `swift_bic` (lowercase) | Suppressed — typed name in name field |
-
-## What is still “hardcoded”
-
-| Component | Hardcoded? | Notes |
-|-----------|------------|-------|
-| Regex detectors | Yes | Patterns in `lib-bundle.js` / detector modules |
-| Field semantics | Yes, but centralized | `field-semantics.js` — single place to extend |
-| Intent (form vs compose) | Yes | `intent-config.js` host/path patterns |
-| Policy packs | Yes | Catalog in `policy-packs.js` |
-| Per-customer rules | No | Admin JSON / packs in DB `organizations.settings` |
-
-There is no hidden ML model. “Context-aware” means **field label + intent + suppress/prefer rules**, not trained embeddings.
-
-## Extending safely
-
-1. **New label behavior** — add a row to `SEMANTICS` in `field-semantics.js`.
-2. **New pattern** — add detector in `lib-bundle.js`, then add gating/context-resolve if it collides with existing categories.
-3. **New enforcement** — add category to `policy/schema.js` and policy packs; detection and policy are separate.
+1. **New label behaviour** — add/edit a row in `intent-config.js` → `fieldSemantics`
+2. **New detector** — `lib-bundle.js`; add suppress/prefer in `fieldSemantics` if it collides
+3. **New enforcement category** — `policy/schema.js` + packs; detection stays separate
 
 ## Tests
 
-`tests/detection/` — PPS, IBAN spacing, name-field SWIFT suppression. Run `npm test`.
+`tests/detection/` — PPS, IBAN, name-field SWIFT. Run `npm test`.
 
 ## Related
 
-- [POLICY_CONFIG.md](POLICY_CONFIG.md) — packs and admin JSON
-- [OPS.md](OPS.md) — platform monitoring and support tab
+- [POLICY_CONFIG.md](POLICY_CONFIG.md) — org warn/block only
+- [OPS.md](OPS.md) — support tickets and monitoring

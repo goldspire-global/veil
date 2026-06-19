@@ -6,7 +6,7 @@ How Veil DLP rules are defined, what a **policy pack** is, and how custom JSON f
 
 | Layer | Where set | What it does |
 |-------|-----------|--------------|
-| **Detection** | Extension code (`lib-bundle.js`, `field-semantics.js`) | Finds patterns (IBAN, PPS, API keys). Uses field labels and form context — not configurable via admin JSON. |
+| **Detection** | Extension code (`lib-bundle.js`, `intent-config.js`) | Finds patterns; uses field labels and form context — **not** configurable via admin JSON. |
 | **Company default pack** | Admin → Access | Default warn/block rules for everyone not on a sub-team. |
 | **Sub-team pack or JSON** | Admin → Sub-teams → Set policy | Stricter or different rules for assigned members only. |
 | **Personal profile** | Extension popup (personal users) | Local passphrase / secure mode — no org DLP. |

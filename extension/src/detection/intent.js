@@ -1,5 +1,5 @@
 /**
- * Infer user intent from URL, form structure, and field semantics.
+ * Infer surface intent from URL, form structure, and field semantics (intent-config rules).
  * Product heuristics: GoldspireIntentConfig. Deployment hosts: GoldspireConstants.
  */
 (function (global) {
@@ -97,19 +97,14 @@
 
   function isNameField(element) {
     const hints = fieldHints(element);
-    const auto = piiAutocomplete();
-    if (auto.has(hints.autocomplete) && ['given-name', 'family-name', 'name', 'nickname', 'additional-name'].includes(hints.autocomplete)) {
-      return true;
-    }
-    const combined = `${hints.labelText} ${hints.placeholder} ${hints.name} ${hints.id}`;
-    return /\b(first|last|full|given|family|sur|middle|maiden)\s*name\b/i.test(combined)
-      || /\bstudent\s*name\b/i.test(combined);
+    const ctx = global.GoldspireFieldSemantics?.contextFromElementHints?.(hints) || hints;
+    return global.GoldspireFieldSemantics?.inferFieldSemantics?.(ctx)?.isPersonName === true;
   }
 
   function isGovernmentIdField(element) {
     const hints = fieldHints(element);
-    const combined = `${hints.labelText} ${hints.placeholder} ${hints.name} ${hints.id}`;
-    return /\b(pps|personal public service|national id|national insurance|nino|social security|ssn|tax id|student id)\b/i.test(combined);
+    const ctx = global.GoldspireFieldSemantics?.contextFromElementHints?.(hints) || hints;
+    return global.GoldspireFieldSemantics?.inferFieldSemantics?.(ctx)?.isGovernmentId === true;
   }
 
   function fieldExpectsPii(element) {

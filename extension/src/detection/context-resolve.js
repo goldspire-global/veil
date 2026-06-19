@@ -1,7 +1,12 @@
 /**
- * Context-aware disambiguation — uses field semantics + intent, not detector-only guesses.
+ * Rule-based disambiguation — applies intent-config field semantics + structural rules.
+ * No inference beyond declared configuration in GoldspireIntentConfig.
  */
 (function (global) {
+  function cfg() {
+    return global.GoldspireIntentConfig?.disambiguation || {};
+  }
+
   function fieldSemantics(context = {}) {
     if (context.fieldSemantics) return context.fieldSemantics;
     return global.GoldspireFieldSemantics?.inferFieldSemantics?.(context) || {
@@ -28,15 +33,6 @@
     return fieldSemantics(context).isPaymentAccount;
   }
 
-  function isLowRiskFormField(context = {}) {
-    return (
-      context.intent === 'form_data_entry'
-      || context.inForm
-      || isNameFieldContext(context)
-      || isGovernmentIdFieldContext(context)
-    );
-  }
-
   function originalSlice(text, hit) {
     const raw = String(hit?.matchedTextRaw || '');
     if (!raw) return '';
@@ -48,16 +44,16 @@
   function isHighConfidenceSecret(hit) {
     const cat = hit?.category || '';
     const conf = Number(hit.confidence) || 0;
-    if (cat === 'api_key' && conf >= 90) return true;
-    if (cat === 'jwt' && conf >= 85) return true;
-    if (cat === 'credit_card' && conf >= 85) return true;
-    return false;
+    const bypass = cfg().highConfidenceBypass || {};
+    const floor = Number(bypass[cat]);
+    return floor > 0 && conf >= floor;
   }
 
   function looksLikeTypedName(text, hit) {
     const slice = originalSlice(text, hit);
     if (!slice || /\d/.test(slice)) return false;
-    return slice === slice.toLowerCase() && /^[a-z]+$/.test(slice);
+    const wordRe = new RegExp(cfg().typedLowercaseWord || '^[a-z]+$', 'i');
+    return slice === slice.toLowerCase() && wordRe.test(slice);
   }
 
   function compactText(text) {
@@ -65,7 +61,12 @@
   }
 
   function hasIbanLead(text) {
-    return /^[A-Z]{2}\d{2}/.test(compactText(text));
+    return new RegExp(cfg().ibanCountryLead || '^[A-Z]{2}\\d{2}').test(compactText(text));
+  }
+
+  function looksLikePpsShape(hit) {
+    const ppsRe = new RegExp(cfg().irishPpsShape || '^\\d{7}[A-W]', 'i');
+    return ppsRe.test(compactText(hit?.matchedTextRaw || ''));
   }
 
   function resolveDetections(text, detections = [], context = {}) {
@@ -73,25 +74,14 @@
     if (!input || !detections.length) return detections;
 
     const semantics = fieldSemantics(context);
-    const suppressSet = new Set(semantics.suppressCategories || []);
-    const nameField = isNameFieldContext(context);
     const govIdField = isGovernmentIdFieldContext(context);
     const paymentField = isPaymentFieldContext(context);
-    const formContext = isLowRiskFormField(context);
     const ibanLead = hasIbanLead(input);
 
     let out = detections.filter((hit) => {
       const cat = hit?.category || '';
 
-      if (suppressSet.has(cat) && !isHighConfidenceSecret(hit)) {
-        return false;
-      }
-
-      if (nameField && ['api_key', 'swift_bic', 'jwt', 'iban', 'credit_card', 'routing_number'].includes(cat)) {
-        return isHighConfidenceSecret(hit);
-      }
-
-      if (formContext && nameField && ['phone', 'email', 'customer_id', 'internal_company_reference'].includes(cat)) {
+      if (global.GoldspireFieldSemantics?.shouldSuppressCategory?.(cat, { ...context, fieldSemantics: semantics }, hit)) {
         return false;
       }
 
@@ -99,7 +89,7 @@
         return false;
       }
 
-      if (cat === 'api_key' && looksLikeTypedName(input, hit) && (Number(hit.confidence) || 0) < 90) {
+      if (cat === 'api_key' && looksLikeTypedName(input, hit) && !isHighConfidenceSecret(hit)) {
         return false;
       }
 
@@ -107,7 +97,7 @@
         return false;
       }
 
-      if (cat === 'iban' && !ibanLead && /^\d{7}[A-W]/i.test(compactText(hit.matchedTextRaw || ''))) {
+      if (cat === 'iban' && !ibanLead && looksLikePpsShape(hit)) {
         return false;
       }
 
@@ -146,7 +136,6 @@
     isNameFieldContext,
     isGovernmentIdFieldContext,
     isPaymentFieldContext,
-    isLowRiskFormField,
     fieldSemantics,
   };
 })(typeof globalThis !== 'undefined' ? globalThis : self);

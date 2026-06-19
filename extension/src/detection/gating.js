@@ -1,16 +1,20 @@
 /**
- * Contextual gating — which detections should interrupt the user.
+ * Copilot gating — reads category sets from GoldspireIntentConfig (locked product rules).
  */
 (function (global) {
-  const SECRET_CATEGORIES = new Set([
-    'api_key', 'jwt', 'password', 'credit_card',
-  ]);
+  function gatingCfg() {
+    return global.GoldspireIntentConfig?.gating || {};
+  }
 
-  const FINANCIAL_CATEGORIES = new Set([
+  function categorySet(key, fallback = []) {
+    return new Set(gatingCfg()[key] || fallback);
+  }
+
+  const SECRET_CATEGORIES = categorySet('secretCategories', ['api_key', 'jwt', 'password', 'credit_card']);
+  const FINANCIAL_CATEGORIES = categorySet('financialCategories', [
     'iban', 'routing_number', 'swift_bic', 'bank_account', 'tax_id',
   ]);
-
-  const PII_CATEGORIES = new Set([
+  const PII_CATEGORIES = categorySet('piiCategories', [
     'email', 'phone', 'date_of_birth', 'ssn', 'nhs_number',
     'national_id', 'passport', 'driver_license', 'medical_record_number',
     'customer_id', 'internal_company_reference', 'pii',
@@ -22,20 +26,21 @@
     'ssn', 'nhs_number', 'medical_record_number',
   ]);
 
+  function semantics(context = {}) {
+    return context.fieldSemantics
+      || global.GoldspireFieldSemantics?.inferFieldSemantics?.(context)
+      || { suppressCategories: [] };
+  }
+
+  function isSuppressedByFieldRules(category, context = {}) {
+    return (semantics(context).suppressCategories || []).includes(category);
+  }
+
   function minConfidence(context = {}, source = 'paste') {
     const intent = context.intent || 'general';
-    if (source === 'paste') {
-      if (intent === 'form_data_entry') return 55;
-      if (intent === 'admin_portal') return 60;
-      return 50;
-    }
-    if (source === 'type') {
-      if (intent === 'compose_outbound') return 55;
-      if (intent === 'form_data_entry') return 75;
-      if (intent === 'admin_portal') return 70;
-      return 65;
-    }
-    return 50;
+    const table = gatingCfg().minConfidence || {};
+    const bySource = table[source] || table.default || {};
+    return Number(bySource[intent] ?? bySource.default ?? 50);
   }
 
   function shouldPromptCategory(category, context = {}, source = 'paste') {
@@ -43,19 +48,19 @@
     const intent = context.intent || 'general';
     const isPaste = source === 'paste' || source === 'paste_selection';
     const isType = source === 'type';
+    const typingSuppress = gatingCfg().formTypingLowConfidenceSuppress || {};
 
     if (intent === 'search') return false;
 
+    if (isSuppressedByFieldRules(cat, context)) return false;
+
     if (intent === 'form_data_entry' || context.inForm) {
-      if (context.isNameField && ['api_key', 'swift_bic', 'jwt', 'iban', 'credit_card', 'routing_number'].includes(cat)) {
-        return false;
-      }
       if (context.expectsPii && PII_CATEGORIES.has(cat)) return false;
       if (isType && !TYPE_HIGH_SIGNAL.has(cat)) return false;
       if (isType && cat === 'swift_bic') return false;
       if (isType && (cat === 'email' || cat === 'phone')) return false;
       if (isPaste && PII_CATEGORIES.has(cat) && context.expectsPii) return false;
-      if (isType && ['api_key', 'swift_bic'].includes(cat) && (Number(context.matchConfidence) || 0) < 88) {
+      if (isType && typingSuppress[cat] && (Number(context.matchConfidence) || 0) < Number(typingSuppress[cat])) {
         return false;
       }
       return TYPE_HIGH_SIGNAL.has(cat) || FINANCIAL_CATEGORIES.has(cat);
