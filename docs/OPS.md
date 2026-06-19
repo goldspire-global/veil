@@ -47,23 +47,44 @@ Set `OPS_ALERT_WEBHOOK_URL` to a **Microsoft Teams** incoming webhook (recommend
 
 ### Microsoft Teams (Power Automate workflow)
 
-Your URL is a **Power Automate manual/HTTP trigger** (`…/triggers/manual/…`). The API sends:
+Your Teams workflow expects an **Adaptive Card** (see setup: “card sent to this workflow's webhook”). Veil sends:
 
 ```json
-{ "text": "Alert title and body in one string" }
+{
+  "type": "message",
+  "attachments": [{
+    "contentType": "application/vnd.microsoft.card.adaptive",
+    "contentUrl": null,
+    "content": { "...": "AdaptiveCard 1.4" }
+  }]
+}
 ```
 
-That matches [Microsoft’s Teams workflow webhook docs](https://learn.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook).
+Railway:
 
-**If you get HTTP 202 but no Teams message**, the webhook is fine — the **flow** is failing or not mapped:
+```
+OPS_ALERT_WEBHOOK_TYPE=teams-webhook
+OPS_ALERT_WEBHOOK_URL=<workflow webhook URL from Teams setup>
+```
 
-1. Open [Power Automate](https://make.powerautomate.com) → **My flows** → your Veil flow → **Run history**.
-2. Open the latest run — check for red **Failed** steps.
-3. Edit the flow → **Post message in a chat or channel** step:
-   - **Post in**: Chat (or the chat you chose)
-   - **Message**: pick dynamic content **`text`** from the trigger body  
-     (expression: `triggerBody()?['text']` or `body('When_a_HTTP_request_is_received')?['text']`)
-4. Save and turn the flow **On**.
+Use `OPS_ALERT_WEBHOOK_TYPE=text` only for old HTTP/manual flows that expect `{"text":"..."}`.
+
+### Error: `UserNotAuthorizedToPerformAppOperationOnGroupChat` / Forbidden
+
+The flow reached Teams but **Power Automate is not installed in that chat**. Fix in Teams (not in Veil):
+
+1. Open **Microsoft Teams** → the **same chat** you picked in the workflow (group chat or meeting chat).
+2. Click **+** (apps) at the top of the chat → search **Workflows** or **Power Automate** → **Add**.
+3. If you used “chat with yourself” / a 1:1, try a **channel** instead: recreate the workflow from a **team channel** → **⋯** → **Workflows** → “Post when webhook received” — channels usually work more reliably for ops alerts.
+4. In Power Automate, **Save** the flow and run **Test** again (or `POST /v1/ops/test-alert`).
+
+### Map the message field
+
+In **Post message in a chat or channel** (or **Post card**), set content from trigger body **`text`**:
+
+`triggerBody()?['text']`
+
+Veil sends: `{ "text": "title + body + timestamp" }`.
 
 **Test from production** (after deploy):
 

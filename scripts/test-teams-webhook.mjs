@@ -28,17 +28,17 @@ const payloads = [
   ['message-only', { message: text }],
   ['text+message', { text, message: text }],
   ['title+text+message', { title: 'Veil ops test', text, message: text, body: text }],
-  ['adaptive-wrapper', {
+  ['adaptive-card', {
     type: 'message',
-    text,
     attachments: [{
       contentType: 'application/vnd.microsoft.card.adaptive',
+      contentUrl: null,
       content: {
-        type: 'AdaptiveCard',
         $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
+        type: 'AdaptiveCard',
         version: '1.4',
         body: [
-          { type: 'TextBlock', text: 'Veil ops test', weight: 'bolder', size: 'medium' },
+          { type: 'TextBlock', text: 'Veil ops test', weight: 'bolder' },
           { type: 'TextBlock', text, wrap: true },
         ],
       },

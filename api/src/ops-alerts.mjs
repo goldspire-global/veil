@@ -8,14 +8,15 @@ const lastSent = new Map();
 function webhookType(env, url) {
   const explicit = String(env.OPS_ALERT_WEBHOOK_TYPE || process.env.OPS_ALERT_WEBHOOK_TYPE || '').trim().toLowerCase();
   const lower = String(url || '').toLowerCase();
-  if (explicit === 'teams-webhook') return 'teams-webhook';
-  if (lower.includes('powerautomate') || lower.includes('powerplatform.com')) return 'powerautomate';
-  if (explicit === 'powerautomate' || explicit === 'teams' || explicit === 'slack' || explicit === 'generic') {
-    return explicit === 'teams' && lower.includes('powerautomate') ? 'powerautomate' : explicit;
-  }
+  if (explicit === 'teams-webhook' || explicit === 'teams-card') return 'teams-webhook';
+  if (explicit === 'powerautomate' || explicit === 'text') return 'powerautomate';
+  if (explicit === 'slack') return 'slack';
+  if (explicit === 'generic') return 'generic';
+  // Teams Workflows (Power Platform) default: Adaptive Card per trigger docs
+  if (lower.includes('powerautomate') || lower.includes('powerplatform.com')) return 'teams-webhook';
   if (lower.includes('webhook.office.com') || lower.includes('outlook.office.com/webhook')) return 'teams';
   if (lower.includes('hooks.slack.com')) return 'slack';
-  if (lower.includes('logic.azure.com')) return 'powerautomate';
+  if (lower.includes('logic.azure.com')) return 'teams-webhook';
   return 'generic';
 }
 
@@ -61,12 +62,10 @@ function buildPowerAutomatePayload({ title, body, severity, at }) {
   return { text };
 }
 
-/** Teams connector webhook trigger (adaptive card path). */
+/** Teams Workflows — Adaptive Card (required by “when a card is sent” trigger). */
 function buildTeamsWebhookPayload({ title, body, severity, at }) {
-  const text = `${title}\n\n${body}\n\n— veil-api · ${severity} · ${at}`;
   return {
     type: 'message',
-    text,
     attachments: [{
       contentType: 'application/vnd.microsoft.card.adaptive',
       contentUrl: null,
@@ -75,9 +74,22 @@ function buildTeamsWebhookPayload({ title, body, severity, at }) {
         type: 'AdaptiveCard',
         version: '1.4',
         body: [
-          { type: 'TextBlock', text: title, weight: 'bolder', size: 'medium' },
+          {
+            type: 'TextBlock',
+            text: title,
+            weight: 'bolder',
+            size: 'medium',
+            color: severity === 'critical' || severity === 'error' ? 'attention' : 'default',
+          },
           { type: 'TextBlock', text: body, wrap: true },
-          { type: 'TextBlock', text: `veil-api · ${severity} · ${at}`, isSubtle: true, size: 'small' },
+          {
+            type: 'FactSet',
+            facts: [
+              { title: 'Service', value: 'veil-api' },
+              { title: 'Severity', value: severity },
+              { title: 'Time (UTC)', value: at },
+            ],
+          },
         ],
       },
     }],
