@@ -73,6 +73,7 @@ const legalEmail = contactEmail(env, 'LEGAL_EMAIL', 'legal@goldspireventures.com
 const opsClientIngestKey = env.OPS_CLIENT_INGEST_KEY || '';
 const portalUnlockUrl = unlockUrl;
 const earlyAccess = String(env.VEIL_EARLY_ACCESS ?? 'true').toLowerCase() !== 'false';
+const earlyAccessEnd = String(env.VEIL_EARLY_ACCESS_END ?? '').trim();
 const stripePaymentLinkTeam = env.STRIPE_PAYMENT_LINK_TEAM ?? '';
 const stripeBillingPortalUrl = env.STRIPE_BILLING_PORTAL_URL ?? '';
 const storeUrlChrome = env.STORE_URL_CHROME ?? '';
@@ -127,6 +128,7 @@ const portalConfigContents = `/**
     PORTAL_ORIGIN: ${jsString(portalOriginValue)},
     UNLOCK_URL: ${jsString(portalUnlockUrl)},
     EARLY_ACCESS: ${earlyAccess},
+    EARLY_ACCESS_END: ${jsString(earlyAccessEnd)},
     STRIPE_PAYMENT_LINK_TEAM: ${jsString(stripePaymentLinkTeam)},
     STRIPE_BILLING_PORTAL_URL: ${jsString(stripeBillingPortalUrl)},
     STORE_URL_CHROME: ${jsString(storeUrlChrome)},

@@ -49,12 +49,16 @@
       </p>
 
       <h2>For IT administrators</h2>
-      <ul class="trust-list">
-        <li>Deploy via <strong>Chrome / Edge managed policy</strong> with extension ID and JSON policy (team passphrase, copilot defaults).</li>
-        <li>Apply a <strong>policy pack</strong> in the admin portal — Finance, Healthcare, Engineering, or observational rollout.</li>
-        <li>Forward <strong>metadata-only</strong> security events to your SIEM webhook; export JSON or CSV from the admin dashboard.</li>
-      </ul>
-      <p class="hint">Enterprise deployment guide: <a href="https://github.com/goldspire-global/veil/blob/main/extension/docs/ENTERPRISE.md" target="_blank" rel="noopener">ENTERPRISE.md on GitHub</a></p>
+      <p class="lede">Full step-by-step guide: <a href="https://github.com/goldspire-global/veil/blob/main/docs/ADMIN_GUIDE.md" target="_blank" rel="noopener">Admin guide (GitHub)</a> · <a href="https://github.com/goldspire-global/veil/blob/main/docs/GETTING_STARTED.md" target="_blank" rel="noopener">Getting started</a></p>
+      <ol class="steps">
+        <li><a href="create.html">Create your team</a> — pick company type; default policy pack is applied automatically.</li>
+        <li>Sign in at <a href="admin.html">Admin</a> — follow the <strong>Setup guide</strong> on the Overview tab.</li>
+        <li><strong>Access</strong> — join codes, company default pack, pack library (enable Finance etc. for sub-teams).</li>
+        <li><strong>Settings → Sub-teams</strong> — assign stricter packs to departments (e.g. Finance at a tech company).</li>
+        <li><strong>People</strong> — add emails, assign sub-teams, view connected browsers.</li>
+        <li>Optional: <strong>Security</strong> — SIEM webhook, export events (metadata only).</li>
+      </ol>
+      <p class="hint">Enterprise MDM deploy: <a href="https://github.com/goldspire-global/veil/blob/main/extension/docs/ENTERPRISE.md" target="_blank" rel="noopener">ENTERPRISE.md</a></p>
       <div class="btn-row">
         <a class="btn btn--ghost" href="admin.html">Admin sign-in</a>
         <a class="btn btn--ghost" href="create.html">Create a team</a>

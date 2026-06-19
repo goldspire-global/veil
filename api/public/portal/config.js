@@ -8,6 +8,7 @@
     PORTAL_ORIGIN: "https://join-veil.goldspireventures.com",
     UNLOCK_URL: "https://goldspire-global.github.io/veil/unlock.html",
     EARLY_ACCESS: true,
+    EARLY_ACCESS_END: "",
     STRIPE_PAYMENT_LINK_TEAM: "https://buy.stripe.com/28EbJ30JL7RU8q1cKj0Ny00",
     STRIPE_BILLING_PORTAL_URL: "",
     STORE_URL_CHROME: "",

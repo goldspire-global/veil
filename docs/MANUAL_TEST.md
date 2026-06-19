@@ -2,7 +2,7 @@
 
 Use this after `npm run package` and loading **`extension/dist`** in the browser.
 
-See also: [MEMBER_GUIDE.md](MEMBER_GUIDE.md) · [ADMIN_GUIDE.md](ADMIN_GUIDE.md) · [MARKET_READY.md](MARKET_READY.md)
+See also: [docs/README.md](README.md) · [GETTING_STARTED.md](GETTING_STARTED.md) · [MEMBER_GUIDE.md](MEMBER_GUIDE.md) · [ADMIN_GUIDE.md](ADMIN_GUIDE.md) · [MARKET_READY.md](MARKET_READY.md)
 
 ### Automated regression (run before manual browser testing)
 

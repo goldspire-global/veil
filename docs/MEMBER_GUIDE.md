@@ -2,6 +2,9 @@
 
 Quick start for **Veil by Goldspire** in Outlook, Gmail, and the web.
 
+**Admin setup?** Your IT owner should follow [ADMIN_GUIDE.md](ADMIN_GUIDE.md).  
+**Install links:** [join-veil install page](https://join-veil.goldspireventures.com/install.html)
+
 ## Install & join
 
 1. Install Veil (from your IT catalog or install page your admin shared)

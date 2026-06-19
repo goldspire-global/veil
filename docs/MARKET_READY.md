@@ -49,12 +49,18 @@ Use this before announcing Veil publicly or onboarding paying customers.
 - [ ] Stripe: `npm run stripe:setup` → payment link in `.env` → `npm run env:apply`
 - [ ] Stripe webhook → `https://veil-api.goldspireventures.com/v1/webhooks/stripe` + `STRIPE_WEBHOOK_SECRET` on Railway
 - [ ] Portal deployed (`join-veil`) with `EARLY_ACCESS` + payment link in `portal/config.js`
+- [ ] Early access end date set: `VEIL_EARLY_ACCESS_END` in Pages env (see [BILLING.md](BILLING.md))
+- [ ] Admin billing UI tested with early access on and off
 
 ## Customer success
 
-- [ ] `docs/ADMIN_GUIDE.md` shared with IT admins
-- [ ] `docs/MEMBER_GUIDE.md` shared with end users
-- [ ] `docs/MANUAL_TEST.md` for QA / pilot validation
+- [ ] [docs/README.md](README.md) — doc index for support triage
+- [ ] [docs/GETTING_STARTED.md](GETTING_STARTED.md) — which guide to read
+- [ ] [docs/ADMIN_GUIDE.md](ADMIN_GUIDE.md) — IT self-serve (tabs, pack library, sub-teams)
+- [ ] [docs/MEMBER_GUIDE.md](MEMBER_GUIDE.md) — end users
+- [ ] [docs/PERSONAL_GUIDE.md](PERSONAL_GUIDE.md) — personal profile
+- [ ] [docs/MANUAL_TEST.md](MANUAL_TEST.md) — QA / pilot validation
+- [ ] Install page links to admin guide on GitHub
 - [ ] First pilot onboarding call scheduled
 
 ## Post-launch (30 days)

@@ -1,48 +1,140 @@
 # Veil — admin guide
 
-For IT admins and team owners setting up **Veil by Goldspire**.
+For **IT admins and team owners**. Goal: set up your org end-to-end without support email.
 
-## 1. Create your team
+**Portal:** `https://join-veil.goldspireventures.com`  
+**Admin console:** `https://join-veil.goldspireventures.com/admin.html`
 
-1. Open your Veil portal (e.g. `https://join-veil.goldspireventures.com/`)
-2. Click **Set up your team**
-3. Enter team name, your work email, company domain (optional), and a **team passphrase** (16+ characters)
-4. Save the **admin sign-in key** and **join code** — the admin key is shown once only
-5. Copy the **invite email** from the success screen and send to members
+---
 
-## 2. Invite members
+## 1. Create your team (one time)
+
+1. Open **Set up your team** (`create.html`)
+2. Enter **team name**, **your work email**, optional **company domain**
+3. Choose **What kind of team is this?** (e.g. Technology / SaaS)
+   - We set a **company default** policy pack (e.g. Engineering for tech)
+   - We enable a **pack library** for other departments (e.g. Finance for your finance group)
+4. Set a **team passphrase** (16+ chars) — use **Generate passphrase** next to the field
+5. Click **Create team** (not Generate)
+6. **Save immediately:** admin sign-in key, join code — **admin key is shown once only**
+7. Copy the **invite email** from the success screen
+
+Early access: team cloud is free; no card required. See [pricing](https://join-veil.goldspireventures.com/pricing.html).
+
+---
+
+## 2. Admin console layout
+
+Sign in with your admin key. The dashboard uses **tabs** (not one long page):
+
+| Tab | Use for |
+|-----|---------|
+| **Overview** | Setup checklist, metrics, billing |
+| **Settings** | Team name, passphrase, who can join, **sub-teams** |
+| **People** | Member emails, sub-team assignment, connected browsers |
+| **Access** | Join codes, **company default pack**, **pack library** |
+| **Security** | Activity stats, SIEM webhook, exports |
+
+Follow the **Setup guide** on Overview — each step links to the right tab.
+
+---
+
+## 3. Invite members
 
 Each member needs:
 
-- Veil extension installed (Chrome or Edge)
-- Join code
-- Work email (must match your membership policy)
-- Team passphrase (share via password manager — not in the same email as the join code)
+| Requirement | Admin action |
+|-------------|----------------|
+| Extension installed | Send [install link](https://join-veil.goldspireventures.com/install.html) |
+| Join code | **Access** tab → Create join code |
+| Work email on allow list | **People** tab → Add member (required if invite-only) |
+| Passphrase | Syncs automatically for cloud teams; or share via password manager |
 
-Members: **Install** → extension popup → **Team** → join code + email → save passphrase → **refresh mail tab**.
+**Member steps:** Install → popup **Team** → join code + email → **refresh mail tab (F5)**.
 
-## 3. Admin dashboard
+Membership modes (**Settings**):
 
-Sign in at **Admin** with your admin key to:
+- **People I add** — invite-only; add emails in People first
+- **Company email** — anyone `@yourdomain.com` with a join code
+- **Anyone with join code** — open (use carefully)
 
-- Add or remove members
-- Rotate join codes
-- Change team passphrase (syncs to extensions on next open)
-- Configure DLP policy and view security activity (metadata only)
+---
 
-## 4. Enterprise deployment (recommended)
+## 4. Policy packs & sub-teams
 
-For organizations with Intune or GPO, push the extension and policy JSON so users skip manual join:
+### Two concepts
 
-See `extension/docs/ENTERPRISE.md` for registry keys and policy fields (`teamPassphrase`, `setupComplete`, `copilotEnabled`).
+1. **Company default pack** — applies to everyone **not** on a sub-team  
+2. **Pack library** — which packs you can assign to **sub-teams**
 
-## 5. Security notes
+Example: **Tech company**, most staff on **Engineering** default; **Finance** sub-team uses **Finance** pack.
 
-- Plaintext secrets are never sent to Veil’s API
-- Security events contain categories and actions — not matched text
-- Rotate the team passphrase if a member leaves or a device is lost
+### Company default
 
-## Support
+1. **Access** tab → **Company default pack** → choose pack → **Apply company default**
+2. Members sync on next extension open
 
-- Portal: install and join pages on your hosted portal
-- Email: support@goldspireventures.com
+### Pack library (enable packs for departments)
+
+1. **Access** tab → **Pack library** → check packs you need (Finance is pre-enabled for tech companies)
+2. Uncheck packs you don’t use (cannot remove the current company default)
+
+### Sub-teams
+
+1. **Settings** tab → create sub-team (e.g. `Finance`)
+2. **Set policy** on that row → pick a pack from your library
+3. **People** tab → **Sub-team** column → assign members
+4. Those members get the sub-team pack instead of the company default
+
+---
+
+## 5. Join codes & devices
+
+- **Access** → join codes: create, share, deactivate old codes
+- **People** → **Connected browsers**: browser, OS, extension version, last active
+- **Disconnect** lost laptops; member re-joins with join code + email
+
+---
+
+## 6. Security & compliance
+
+- **Security** tab: 7/30/90-day stats, by category/source, recent events (metadata only — no secret content)
+- Export JSON/CSV for audits
+- **SIEM webhook**: forward new events to Splunk/Sentinel (metadata only)
+
+---
+
+## 7. Enterprise deployment (optional)
+
+For Intune/GPO: push extension + policy JSON so users skip manual join.
+
+See [extension/docs/ENTERPRISE.md](../extension/docs/ENTERPRISE.md).
+
+---
+
+## 8. Billing
+
+- **Overview** → Billing: early access status and future list price
+- Paid GA: subscribe via Stripe link when early access ends (we email admins first)
+
+Internal: [BILLING.md](BILLING.md)
+
+---
+
+## 9. Security practices
+
+- Never email admin key + join code + passphrase together
+- Rotate team passphrase if someone leaves (**Settings**)
+- Revoke disconnected browsers under **People**
+
+---
+
+## Support escalation (when self-serve isn’t enough)
+
+| Issue | Try first | Then |
+|-------|-----------|------|
+| Member can’t join | Email on People list? Active join code? | [feedback](https://join-veil.goldspireventures.com/feedback.html) |
+| Policy not applying | Sub-team assigned? Extension reopened? | Admin → Refresh |
+| Lost admin key | — | Contact support (key not recoverable; may need new org) |
+
+**Feedback:** [feedback.html](https://join-veil.goldspireventures.com/feedback.html) — describe steps, no secrets.

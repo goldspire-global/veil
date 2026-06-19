@@ -6,8 +6,28 @@
     return global.GoldspirePortal || {};
   }
 
+  function earlyAccessEndMs() {
+    const raw = String(config().EARLY_ACCESS_END || '').trim();
+    if (!raw) return null;
+    const parsed = Date.parse(raw);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  function formatEarlyAccessEnd() {
+    const end = earlyAccessEndMs();
+    if (!end) return '';
+    try {
+      return new Date(end).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+    } catch {
+      return String(config().EARLY_ACCESS_END || '');
+    }
+  }
+
   function isEarlyAccess() {
-    return config().EARLY_ACCESS !== false && String(config().EARLY_ACCESS) !== 'false';
+    if (config().EARLY_ACCESS === false || String(config().EARLY_ACCESS) === 'false') return false;
+    const end = earlyAccessEndMs();
+    if (end != null && Date.now() >= end) return false;
+    return true;
   }
 
   function teamPaymentLink() {
@@ -20,11 +40,15 @@
 
   function renderEarlyAccessBanner(container) {
     if (!container || !isEarlyAccess()) return;
+    const endLabel = formatEarlyAccessEnd();
+    const endLine = endLabel
+      ? ` Free until <strong>${endLabel}</strong> — then list prices apply.`
+      : ' List prices apply at general availability;';
     container.innerHTML = `
       <div class="banner banner--success" role="status">
         <strong>Early access — no payment required.</strong>
-        Create your team free while we’re in review. List prices apply at general availability;
-        we’ll email admins before any charge.
+        Create your team free while we’re in review.${endLine}
+        We’ll email admins before any charge.
       </div>
     `;
     container.hidden = false;
@@ -41,8 +65,9 @@
       : '<li>Enterprise volume pricing from 100+ seats — contact sales.</li>';
 
     if (isEarlyAccess()) {
+      const endLabel = formatEarlyAccessEnd();
       container.innerHTML = `
-        <p class="lede"><strong>Early access</strong> — your team cloud is free. No card on file.</p>
+        <p class="lede"><strong>Early access</strong> — your team cloud is free. No card on file.${endLabel ? ` Free through <strong>${endLabel}</strong>.` : ''}</p>
         <ul class="trust-list">
           <li>Team list price: <strong>$7 / user / month</strong>, billed annually ($84 / user / year), minimum 5 seats.</li>
           ${salesLine}
