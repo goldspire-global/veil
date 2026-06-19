@@ -3,7 +3,7 @@ import { getPool } from './db.mjs';
 import { httpError } from './org-service.mjs';
 import { normalizeEmail } from './auth.mjs';
 import { MEMBERSHIP_POLICIES } from './membership.mjs';
-import { getPolicyPack, resolveIndustrySettings } from './policy-packs.mjs';
+import { getPolicyPack, resolveIndustrySettings, normalizeEnabledPackIds } from './policy-packs.mjs';
 
 const JOIN_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
@@ -83,6 +83,9 @@ function publicSettings(settings) {
       : {}),
     ...(parsed.policyPackId ? { policyPackId: String(parsed.policyPackId) } : {}),
     ...(parsed.industry ? { industry: String(parsed.industry) } : {}),
+    ...(Array.isArray(parsed.enabledPackIds)
+      ? { enabledPackIds: parsed.enabledPackIds.filter((id) => getPolicyPack(id)) }
+      : {}),
     ...(parsed.analytics && typeof parsed.analytics === 'object'
       ? {
         analytics: {
@@ -271,6 +274,14 @@ export async function updateOrganization(admin, body = {}) {
     }
     if (merged.allowedEmailDomains) {
       merged.allowedEmailDomains = parseAllowedDomains({ allowedEmailDomains: merged.allowedEmailDomains });
+    }
+    if (Array.isArray(body.settings.enabledPackIds)) {
+      const industryId = merged.industry || current.industry;
+      const policyPackId = merged.policyPackId || current.policyPackId;
+      merged.enabledPackIds = normalizeEnabledPackIds(body.settings.enabledPackIds, {
+        industryId,
+        policyPackId,
+      });
     }
     patches.push(`settings = $${index++}::jsonb`);
     values.push(JSON.stringify(merged));

@@ -141,37 +141,49 @@
       label: 'Technology / SaaS',
       hint: 'Software, IT, and product teams',
       recommendedPackId: 'engineering',
-      packIds: ['engineering', 'observational'],
+      starterPackIds: ['engineering', 'observational', 'finance', 'gdpr'],
     },
     finance: {
       id: 'finance',
       label: 'Financial services',
       hint: 'Banking, fintech, accounting, insurance',
       recommendedPackId: 'finance',
-      packIds: ['finance', 'observational'],
+      starterPackIds: ['finance', 'observational', 'engineering', 'gdpr'],
     },
     healthcare: {
       id: 'healthcare',
       label: 'Healthcare',
       hint: 'Hospitals, clinics, and health tech',
       recommendedPackId: 'healthcare',
-      packIds: ['healthcare', 'observational'],
+      starterPackIds: ['healthcare', 'observational', 'finance', 'gdpr'],
     },
     eu_privacy: {
       id: 'eu_privacy',
       label: 'EU / privacy-focused',
       hint: 'GDPR-heavy workflows across Europe',
       recommendedPackId: 'gdpr',
-      packIds: ['gdpr', 'observational'],
+      starterPackIds: ['gdpr', 'observational', 'finance', 'engineering'],
     },
     other: {
       id: 'other',
       label: 'Other / mixed',
       hint: 'Start in observational mode — switch when ready',
       recommendedPackId: 'observational',
-      packIds: ['observational', 'engineering', 'gdpr'],
+      starterPackIds: ['observational', 'engineering', 'finance', 'healthcare', 'gdpr'],
     },
   });
+
+  function normalizeEnabledPackIds(enabledPackIds, { industryId, policyPackId } = {}) {
+    const industry = INDUSTRIES[String(industryId || '').trim()] || INDUSTRIES.other;
+    const seeds = [
+      ...(Array.isArray(enabledPackIds) ? enabledPackIds : []),
+      ...industry.starterPackIds,
+      industry.recommendedPackId,
+      'observational',
+      policyPackId,
+    ].filter(Boolean);
+    return [...new Set(seeds.filter((id) => PACKS[id]))];
+  }
 
   global.GoldspirePolicyPacks = {
     list() {
@@ -186,9 +198,20 @@
     getIndustry(id) {
       return INDUSTRIES[String(id || '').trim()] || INDUSTRIES.other;
     },
+    normalizeEnabledPackIds,
     packsForIndustry(industryId) {
       const industry = INDUSTRIES[String(industryId || '').trim()] || INDUSTRIES.other;
-      return industry.packIds.map((packId) => PACKS[packId]).filter(Boolean);
+      return industry.starterPackIds.map((packId) => PACKS[packId]).filter(Boolean);
+    },
+    listPacksByIds(packIds) {
+      return (packIds || []).map((packId) => PACKS[packId]).filter(Boolean);
+    },
+    packsForOrg(orgSettings = {}) {
+      const ids = normalizeEnabledPackIds(orgSettings.enabledPackIds, {
+        industryId: orgSettings.industry,
+        policyPackId: orgSettings.policyPackId,
+      });
+      return ids.map((packId) => PACKS[packId]).filter(Boolean);
     },
     recommendedPackForIndustry(industryId) {
       const industry = INDUSTRIES[String(industryId || '').trim()] || INDUSTRIES.other;

@@ -183,19 +183,26 @@
               <h2>Data protection</h2>
               <p class="hint" id="dlp-industry-note"></p>
               <div class="guide-callout guide-callout--compact">
-                <p class="hint" style="margin:0;">Packs below match your team type. Members receive updates on their next extension open.</p>
+                <p class="hint" style="margin:0;"><strong>Company default</strong> applies to everyone not assigned to a sub-team. Use <strong>Pack library</strong> below to enable packs for departments (e.g. Finance at a tech company), then assign them under Settings → Sub-teams.</p>
               </div>
               <form id="dlp-form">
                 <div class="field">
-                  <label for="dlp-pack">Policy pack</label>
+                  <label for="dlp-pack">Company default pack</label>
                   <select id="dlp-pack"></select>
                   <div class="hint" id="dlp-pack-desc"></div>
                 </div>
                 <div class="btn-row">
-                  <button type="submit" class="btn btn--sm">Apply policy pack</button>
+                  <button type="submit" class="btn btn--sm">Apply company default</button>
                 </div>
               </form>
               <p class="hint" id="dlp-current"></p>
+
+              <div class="panel-section">
+                <h3 style="margin:0 0 0.35rem;font-size:1rem;">Pack library</h3>
+                <p class="hint" style="margin:0 0 0.5rem;">Enable packs your sub-teams can use. Members on a sub-team get that pack instead of the company default.</p>
+                <div id="pack-library" class="pack-library"></div>
+                <p class="hint" id="pack-library-status" style="margin-top:0.75rem;min-height:1.2em;"></p>
+              </div>
             </div>
           </div>
         </section>
@@ -345,18 +352,26 @@
       if (row) row.hidden = policy !== 'domain';
     }
 
-    function renderDlpPackOptions(selectedId, industryId) {
+    function enabledPackIdsForOrg(org) {
+      if (!org || !window.GoldspirePolicyPacks) return [];
+      return GoldspirePolicyPacks.normalizeEnabledPackIds(org.settings?.enabledPackIds, {
+        industryId: org.settings?.industry,
+        policyPackId: org.settings?.policyPackId,
+      });
+    }
+
+    function renderDlpPackOptions(selectedId, org) {
       const select = document.getElementById('dlp-pack');
       const desc = document.getElementById('dlp-pack-desc');
       const industryNote = document.getElementById('dlp-industry-note');
-      if (!select || !window.GoldspirePolicyPacks) return;
-      const industry = GoldspirePolicyPacks.getIndustry(industryId);
-      const packs = GoldspirePolicyPacks.packsForIndustry(industryId);
+      if (!select || !window.GoldspirePolicyPacks || !org) return;
+      const industry = GoldspirePolicyPacks.getIndustry(org.settings?.industry);
+      const packs = GoldspirePolicyPacks.packsForOrg(org.settings);
       if (industryNote) {
-        industryNote.textContent = `Team type: ${industry.label} — showing packs relevant to your industry.`;
+        industryNote.textContent = `${industry.label} company — company default below; enable more packs in the library for sub-teams.`;
       }
       select.innerHTML = packs.map((pack) => `
-        <option value="${pack.id}"${pack.id === selectedId ? ' selected' : ''}>${pack.label}${pack.id === industry.recommendedPackId ? ' (recommended)' : ''}</option>
+        <option value="${pack.id}"${pack.id === selectedId ? ' selected' : ''}>${pack.label}${pack.id === industry.recommendedPackId ? ' (recommended default)' : ''}</option>
       `).join('');
       const updateDesc = () => {
         const pack = GoldspirePolicyPacks.get(select.value);
@@ -366,6 +381,55 @@
       updateDesc();
     }
 
+    function renderPackLibrary(org) {
+      const container = document.getElementById('pack-library');
+      if (!container || !window.GoldspirePolicyPacks || !org) return;
+      const enabled = new Set(enabledPackIdsForOrg(org));
+      const industry = GoldspirePolicyPacks.getIndustry(org.settings?.industry);
+      const defaultPackId = org.settings?.policyPackId || 'observational';
+      container.innerHTML = GoldspirePolicyPacks.list().map((pack) => {
+        const on = enabled.has(pack.id);
+        const isDefault = pack.id === defaultPackId;
+        const rec = pack.id === industry.recommendedPackId;
+        return `
+          <label class="pack-library__item${on ? ' pack-library__item--on' : ''}">
+            <input type="checkbox" data-pack-id="${pack.id}"${on ? ' checked' : ''}${isDefault ? ' disabled' : ''} />
+            <span>
+              <strong>${pack.label}${rec ? ' · recommended default' : ''}${isDefault ? ' · company default' : ''}</strong>
+              <span class="hint">${pack.description}</span>
+            </span>
+          </label>`;
+      }).join('');
+    }
+
+    async function savePackLibrary(enabledIds) {
+      const statusEl = document.getElementById('pack-library-status');
+      try {
+        await app.apiAdmin('/v1/orgs/me', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ settings: { enabledPackIds: enabledIds } }),
+        });
+        if (statusEl) app.setStatus(statusEl, 'Pack library updated.', 'ok');
+        await loadDashboard();
+      } catch (error) {
+        if (statusEl) app.setStatus(statusEl, error.message, 'error');
+        renderPackLibrary(cachedOrg);
+      }
+    }
+
+    document.getElementById('pack-library')?.addEventListener('change', async (event) => {
+      const checkbox = event.target;
+      if (!checkbox?.dataset?.packId || !cachedOrg) return;
+      const packId = checkbox.dataset.packId;
+      const enabled = new Set(enabledPackIdsForOrg(cachedOrg));
+      if (checkbox.checked) enabled.add(packId);
+      else enabled.delete(packId);
+      const defaultPackId = cachedOrg.settings?.policyPackId || 'observational';
+      if (!enabled.has(defaultPackId)) enabled.add(defaultPackId);
+      await savePackLibrary([...enabled]);
+    });
+
     function renderDlpStatus(org) {
       const current = document.getElementById('dlp-current');
       if (!current) return;
@@ -373,7 +437,7 @@
       const pack = GoldspirePolicyPacks?.get?.(packId);
       const enforced = org.settings?.dlp?.enabled === true;
       current.textContent = pack
-        ? `Active: ${pack.label}${enforced ? ' (enforced)' : ' (copilot only)'}. Policy version ${org.policyVersion || 1}.`
+        ? `Company default: ${pack.label}${enforced ? ' (enforced)' : ' (copilot only)'}. Policy version ${org.policyVersion || 1}.`
         : '';
     }
 
@@ -410,10 +474,8 @@
         document.getElementById('settings-domains').value = (org.settings?.allowedEmailDomains || []).join(', ');
         document.getElementById('siem-url').value = org.settings?.analytics?.siemWebhookUrl || '';
         syncDomainsRow();
-        renderDlpPackOptions(
-          org.settings?.policyPackId || 'observational',
-          org.settings?.industry || 'other',
-        );
+        renderDlpPackOptions(org.settings?.policyPackId || 'observational', org);
+        renderPackLibrary(org);
         renderDlpStatus(org);
 
         const codesBody = document.getElementById('codes-body');
@@ -554,9 +616,8 @@
       document.getElementById('team-policy-title').textContent = `Policy for ${team.name}`;
       document.getElementById('team-policy-lede').textContent =
         'Members assigned to this sub-team get these rules on top of the org policy. Save, then ask them to reopen the extension (or wait for sync).';
-      if (packSelect && window.GoldspirePolicyPacks) {
-        const industryId = cachedOrg?.settings?.industry || 'other';
-        const packs = GoldspirePolicyPacks.packsForIndustry(industryId);
+      if (packSelect && window.GoldspirePolicyPacks && cachedOrg) {
+        const packs = GoldspirePolicyPacks.packsForOrg(cachedOrg.settings);
         packSelect.innerHTML = [
           '<option value="">— Use custom JSON below —</option>',
           ...packs.map((pack) => `
@@ -693,7 +754,7 @@
             },
           }),
         });
-        app.setStatus(dashStatus, `${pack.label} policy applied. Members sync on next extension open.`, 'ok');
+        app.setStatus(dashStatus, `${pack.label} company default applied. Members not on a sub-team sync on next extension open.`, 'ok');
         await loadDashboard();
       } catch (error) {
         app.setStatus(dashStatus, error.message, 'error');

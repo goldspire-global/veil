@@ -12,12 +12,12 @@
     return [
       {
         id: 'policy',
-        label: hasPolicy ? 'Policy pack applied (Access tab)' : 'Choose a policy pack (Access tab)',
+        label: hasPolicy ? 'Company default pack set (Access tab)' : 'Set company default pack (Access tab)',
         tab: 'access',
         done: hasPolicy,
         hint: hasPolicy
-          ? `${overview.policy?.packLabel || policyPack} is active for ${industry?.label || 'your team'}.`
-          : `Pick a pack suited to ${industry?.label || 'your team'} — observational is fine for rollout.`,
+          ? `${overview.policy?.packLabel || policyPack} is the default. Use sub-teams for other departments.`
+          : `Pick a default for most employees — enable extra packs in the library for Finance, Legal, etc.`,
       },
       {
         id: 'members',
@@ -107,13 +107,14 @@
   function subTeamGuideHtml() {
     return `
       <div class="guide-callout guide-callout--compact">
-        <strong>What are sub-teams?</strong>
-        <p class="hint" style="margin:0.5rem 0 0;">Use sub-teams when one group needs <em>stricter</em> rules than the rest of the org — for example Engineering with mandatory blocks on API keys while Sales stays observational.</p>
+        <strong>Department-specific packs</strong>
+        <p class="hint" style="margin:0.5rem 0 0;">Sub-teams let one group use a <em>different</em> pack than the company default. Example: a tech company keeps <strong>Engineering</strong> as the default, creates a <strong>Finance</strong> sub-team, enables the Finance pack in Access → Pack library, then assigns finance members here.</p>
         <ol class="guide-steps">
-          <li><strong>Create</strong> a sub-team below (e.g. Engineering).</li>
-          <li>Go to <strong>People</strong> → assign members using the <strong>Sub-team</strong> column.</li>
-          <li>Click <strong>Set policy</strong> on the sub-team to apply a stricter policy pack or custom overlay.</li>
-          <li>Members pick up changes the next time they open the extension (or within a few hours).</li>
+          <li>Enable packs you need under <strong>Access → Pack library</strong> (Finance is included for tech companies by default).</li>
+          <li><strong>Create</strong> a sub-team below (e.g. Finance, Legal, EU team).</li>
+          <li>Go to <strong>People</strong> → assign members in the <strong>Sub-team</strong> column.</li>
+          <li>Click <strong>Set policy</strong> and pick a pack from your library.</li>
+          <li>Members pick up changes the next time they open the extension.</li>
         </ol>
       </div>`;
   }

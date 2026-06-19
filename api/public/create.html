@@ -158,10 +158,22 @@
 
     function updateIndustryPreview() {
       if (!industryPreview || !window.GoldspirePolicyPacks) return;
-      const industry = GoldspirePolicyPacks.getIndustry(industrySelect?.value);
-      const pack = GoldspirePolicyPacks.recommendedPackForIndustry(industrySelect?.value);
+      const industryId = industrySelect?.value;
+      const industry = GoldspirePolicyPacks.getIndustry(industryId);
+      const pack = GoldspirePolicyPacks.recommendedPackForIndustry(industryId);
+      const libraryIds = GoldspirePolicyPacks.normalizeEnabledPackIds([], {
+        industryId,
+        policyPackId: pack?.id,
+      });
+      const libraryLabels = libraryIds
+        .filter((id) => id !== pack?.id)
+        .map((id) => GoldspirePolicyPacks.get(id)?.label)
+        .filter(Boolean);
       industryPreview.innerHTML = pack
-        ? `<strong>Ready to go:</strong> we’ll apply the <strong>${pack.label}</strong> pack — ${pack.description}`
+        ? `<strong>Company default:</strong> ${pack.label} — ${pack.description}`
+          + (libraryLabels.length
+            ? `<br><span class="hint" style="margin-top:0.35rem;display:block;">Pack library will also include <strong>${libraryLabels.join(', ')}</strong> for sub-teams (e.g. assign Finance pack to your finance group).</span>`
+            : '')
         : '';
     }
 
@@ -200,8 +212,8 @@
         const policyStep = document.getElementById('success-policy-step');
         if (policyStep && appliedPack) {
           policyStep.innerHTML = appliedPack.id === 'observational'
-            ? 'You’re starting in <strong>Observational</strong> mode — tighten rules in <strong>Admin → Access</strong> when ready.'
-            : `<strong>${appliedPack.label}</strong> policy is already active for your team. Review or change it in <strong>Admin → Access</strong> if needed.`;
+            ? 'You’re starting in <strong>Observational</strong> mode — set a company default in <strong>Admin → Access</strong> when ready.'
+            : `<strong>${appliedPack.label}</strong> is your company default. Enable other packs in <strong>Admin → Access → Pack library</strong> and assign them to sub-teams (e.g. Finance).`;
         }
 
         const joinUrl = `${app.portalOrigin() || location.origin}${location.pathname.replace(/[^/]+$/, '')}join.html`;
