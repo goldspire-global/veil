@@ -7,11 +7,15 @@ const lastSent = new Map();
 
 function webhookType(env, url) {
   const explicit = String(env.OPS_ALERT_WEBHOOK_TYPE || process.env.OPS_ALERT_WEBHOOK_TYPE || '').trim().toLowerCase();
-  if (explicit === 'teams' || explicit === 'slack' || explicit === 'generic') return explicit;
   const lower = String(url || '').toLowerCase();
+  if (lower.includes('powerautomate') || lower.includes('powerplatform.com')) return 'powerautomate';
+  if (explicit === 'powerautomate' || explicit === 'teams' || explicit === 'slack' || explicit === 'generic') {
+    if (explicit === 'teams' && lower.includes('powerautomate')) return 'powerautomate';
+    return explicit;
+  }
   if (lower.includes('webhook.office.com') || lower.includes('outlook.office.com/webhook')) return 'teams';
   if (lower.includes('hooks.slack.com')) return 'slack';
-  if (lower.includes('logic.azure.com') || lower.includes('powerplatform.com')) return 'teams';
+  if (lower.includes('logic.azure.com')) return 'powerautomate';
   return 'generic';
 }
 
@@ -51,6 +55,20 @@ function buildSlackPayload({ title, body, severity, at }) {
   };
 }
 
+/** Power Automate “post to Teams” flows — flat fields for easy mapping. */
+function buildPowerAutomatePayload({ title, body, severity, at }) {
+  const message = `${title}\n\n${body}\n\n— veil-api · ${severity} · ${at}`;
+  return {
+    title,
+    text: message,
+    body,
+    message,
+    severity,
+    service: 'veil-api',
+    at,
+  };
+}
+
 function buildGenericPayload({ title, body, severity, at }) {
   return {
     text: `${title}\n${body}`,
@@ -63,6 +81,7 @@ function buildGenericPayload({ title, body, severity, at }) {
 }
 
 export function buildWebhookPayload(type, alert) {
+  if (type === 'powerautomate') return buildPowerAutomatePayload(alert);
   if (type === 'teams') return buildTeamsPayload(alert);
   if (type === 'slack') return buildSlackPayload(alert);
   return buildGenericPayload(alert);
