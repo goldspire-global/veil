@@ -304,18 +304,22 @@
     title = 'Secure selection',
     modes = [],
     defaultMode = 'team',
+    settings = null,
     onSubmit,
     onCancel,
   }) {
     removePrompt();
     document.getElementById('goldspire-veil-copilot')?.remove();
 
+    const isOrg = global.GoldspireCopy?.isOrgProfile?.(settings) || false;
     const initialMode = modes.some((m) => m.value === defaultMode)
       ? defaultMode
       : (modes[0]?.value || 'team');
 
     const panelHtml = {
-      team: '<p class="gst-veil-pop__hint">Uses your saved passphrase from Veil settings.</p>',
+      team: isOrg
+        ? '<p class="gst-veil-pop__hint">Uses your saved team passphrase from Veil settings.</p>'
+        : '<p class="gst-veil-pop__hint">Uses your saved passphrase from Veil settings.</p>',
       direct: `
         <p class="gst-veil-pop__hint">Unlock keys go only to the people you name — not everyone on the email thread. Use Team for groups or lists.</p>
         <div class="gst-veil-pop__field">

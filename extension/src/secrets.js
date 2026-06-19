@@ -4,7 +4,8 @@
  */
 (function (global) {
   const DEVICE_KEY = 'gstDeviceWrapKey';
-  const SYNC_PASSPHRASE = 'gstEncryptedPassphrase';
+  const PERSONAL_LOCAL_KEY = 'gstEncryptedPassphrase';
+  const SYNC_PASSPHRASE = 'gstEncryptedPassphraseSync';
   const ORG_SYNC_KEY = 'gstOrgEncryptedPassphraseSync';
   const ORG_SESSION_KEY = 'gstOrgEncryptedPassphrase';
   const SESSION_TEAM_KEY = 'gstSessionTeamPassphrase';
@@ -85,13 +86,42 @@
     return new TextDecoder().decode(decrypted);
   }
 
+  function storageSet(area, values) {
+    const gst = browser();
+    return new Promise((resolve, reject) => {
+      const store = gst?.storage?.[area];
+      if (!store?.set) {
+        resolve();
+        return;
+      }
+      store.set(values, () => {
+        const err = gst?.runtime?.lastError;
+        if (err) reject(new Error(err.message || 'storage_set_failed'));
+        else resolve();
+      });
+    });
+  }
+
+  function storageRemove(area, keys) {
+    const gst = browser();
+    return new Promise((resolve) => {
+      const store = gst?.storage?.[area];
+      if (!store?.remove) {
+        resolve();
+        return;
+      }
+      store.remove(keys, () => resolve());
+    });
+  }
+
   async function savePassphrase(passphrase, profile, options = {}) {
     const trimmed = passphrase?.trim() || '';
     const persist = options.persist !== false;
     if (!trimmed) {
       const gst = browser();
       await Promise.all([
-        new Promise((resolve) => gst?.storage?.sync?.remove?.([SYNC_PASSPHRASE, ORG_SYNC_KEY], resolve) || resolve()),
+        storageRemove('sync', [SYNC_PASSPHRASE, ORG_SYNC_KEY]),
+        storageRemove('local', [PERSONAL_LOCAL_KEY, ORG_SYNC_KEY]),
         new Promise((resolve) =>
           gst?.storage?.session?.remove?.(['passphrase', ORG_SESSION_KEY], resolve) || resolve(),
         ),
@@ -104,9 +134,7 @@
 
     if (profile === 'organization') {
       if (persist && gst?.storage?.sync) {
-        await new Promise((resolve) => {
-          gst.storage.sync.set({ [ORG_SYNC_KEY]: encrypted }, resolve);
-        });
+        await storageSet('sync', { [ORG_SYNC_KEY]: encrypted });
       }
       if (gst?.storage?.session) {
         await new Promise((resolve) => {
@@ -114,15 +142,15 @@
         });
       }
       if (!persist) {
-        await new Promise((resolve) => gst?.storage?.sync?.remove?.(ORG_SYNC_KEY, resolve) || resolve());
+        await storageRemove('sync', ORG_SYNC_KEY);
       }
-      await new Promise((resolve) => gst?.storage?.sync?.remove?.(SYNC_PASSPHRASE, resolve) || resolve());
+      await storageRemove('sync', SYNC_PASSPHRASE);
+      await storageRemove('local', PERSONAL_LOCAL_KEY);
       return;
     }
-    await new Promise((resolve) => {
-      gst?.storage?.sync?.set?.({ [SYNC_PASSPHRASE]: encrypted, passphrase: '' }, resolve);
-    });
-    await new Promise((resolve) => gst?.storage?.sync?.remove?.(ORG_SYNC_KEY, resolve) || resolve());
+
+    await storageSet('local', { [PERSONAL_LOCAL_KEY]: encrypted });
+    await storageRemove('sync', [SYNC_PASSPHRASE, 'passphrase']);
     if (gst?.storage?.session) {
       await new Promise((resolve) => gst.storage.session.remove('passphrase', resolve));
     }
@@ -160,17 +188,28 @@
       return '';
     }
 
-    const synced = await storageGet('sync', { [SYNC_PASSPHRASE]: '', passphrase: '' });
-
-    if (synced[SYNC_PASSPHRASE]) {
+    const local = await storageGet('local', { [PERSONAL_LOCAL_KEY]: '' });
+    if (local[PERSONAL_LOCAL_KEY]) {
       try {
-        return await decryptFromStorage(synced[SYNC_PASSPHRASE]);
+        return await decryptFromStorage(local[PERSONAL_LOCAL_KEY]);
       } catch {
         return '';
       }
     }
 
-    // Migrate legacy plaintext storage once, then re-save encrypted.
+    const synced = await storageGet('sync', { [SYNC_PASSPHRASE]: '', passphrase: '' });
+
+    if (synced[SYNC_PASSPHRASE]) {
+      try {
+        const decrypted = await decryptFromStorage(synced[SYNC_PASSPHRASE]);
+        if (decrypted) await savePassphrase(decrypted, 'personal');
+        return decrypted;
+      } catch {
+        return '';
+      }
+    }
+
+    // Migrate legacy plaintext storage once, then re-save encrypted locally.
     if (synced.passphrase) {
       await savePassphrase(synced.passphrase, 'personal');
       return synced.passphrase;

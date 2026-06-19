@@ -29,7 +29,9 @@
     const text = String(request.text || request.selectionContext?.selectedText || '');
     if (!text) return { ok: false, error: 'no_text' };
 
-    const masked = global.GoldspireVeilMask?.maskSensitiveText?.(text, request.context) || text;
+    const masked = global.GoldspireVeilMask?.maskWithPreservedWhitespace?.(text, request.context)
+      || global.GoldspireVeilMask?.maskSensitiveText?.(text, request.context)
+      || text;
     if (masked === text) return { ok: false, error: 'nothing_to_mask' };
 
     if (request.selectionContext && deps?.replaceSelection) {

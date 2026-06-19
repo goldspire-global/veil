@@ -30,7 +30,19 @@
     return out;
   }
 
+  function maskWithPreservedWhitespace(text, context = {}) {
+    const raw = String(text || '');
+    if (!raw.trim()) return raw;
+    const lead = raw.match(/^\s*/)?.[0] || '';
+    const trail = raw.match(/\s*$/)?.[0] || '';
+    const core = raw.trim();
+    const masked = maskSensitiveText(core, context);
+    if (masked === core) return raw;
+    return `${lead}${masked}${trail}`;
+  }
+
   global.GoldspireVeilMask = {
     maskSensitiveText,
+    maskWithPreservedWhitespace,
   };
 })(typeof globalThis !== 'undefined' ? globalThis : self);

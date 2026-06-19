@@ -5,7 +5,7 @@
 (function (global) {
   global.GoldspireConstants = {
     /** Gmail/Outlook persist https links in sent mail; extension users unlock via in-page modal. */
-    BUILT_IN_PUBLIC_UNLOCK_URL: "https://goldspire-global.github.io/veil/unlock.html",
+    BUILT_IN_PUBLIC_UNLOCK_URL: "https://join-veil.goldspireventures.com/unlock.html",
     /** One-time codes expire after this window (envelope `exp`). */
     ONE_TIME_TTL_MS: 72 * 60 * 60 * 1000,
     /** PBKDF2-SHA256 iterations (OWASP 2023 guidance for SHA-256). */

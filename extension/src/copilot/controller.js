@@ -105,7 +105,9 @@
     }
 
     if (actionId === 'mask') {
-      const masked = global.GoldspireVeilMask?.maskSensitiveText?.(text, context) || text;
+      const masked = global.GoldspireVeilMask?.maskWithPreservedWhitespace?.(text, context)
+        || global.GoldspireVeilMask?.maskSensitiveText?.(text, context)
+        || text;
       let nextSelection = selectionContext;
       if (alreadyInserted && fieldState && match?.raw) {
         nextSelection = global.GoldspirePasteInsert?.replaceFieldMatch?.(fieldState, match.raw, masked);

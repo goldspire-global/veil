@@ -6,7 +6,7 @@
     API_BASE: "https://veil-api.goldspireventures.com",
     PORTAL_URL: "https://join-veil.goldspireventures.com/join.html",
     PORTAL_ORIGIN: "https://join-veil.goldspireventures.com",
-    UNLOCK_URL: "https://goldspire-global.github.io/veil/unlock.html",
+    UNLOCK_URL: "https://join-veil.goldspireventures.com/unlock.html",
     EARLY_ACCESS: true,
     EARLY_ACCESS_END: "",
     STRIPE_PAYMENT_LINK_TEAM: "https://buy.stripe.com/28EbJ30JL7RU8q1cKj0Ny00",

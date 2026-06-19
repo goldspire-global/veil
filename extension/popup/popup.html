@@ -169,6 +169,14 @@
               </details>
             </div>
 
+            <label class="field" id="default-secure-mode-row">
+              <span>Default when securing</span>
+              <select id="defaultSecureMode" name="defaultSecureMode">
+                <option value="team">My passphrase</option>
+                <option value="one-time">One-time code</option>
+              </select>
+            </label>
+
             <!-- Team -->
             <div id="settings-organization" hidden>
               <div id="org-connected-card" class="settings-status settings-status--card" hidden>
@@ -230,13 +238,6 @@
               <button type="button" id="insert-password" class="btn btn--ghost">Insert</button>
             </div>
           </details>
-              <label class="field">
-                <span>Default when securing</span>
-                <select id="defaultSecureMode" name="defaultSecureMode">
-                  <option value="team">Team passphrase</option>
-                  <option value="one-time">One-time code</option>
-                </select>
-              </label>
               <label class="checkbox">
                 <input id="resecureAfterUnlock-org" type="checkbox" checked />
                 <span>Auto re-lock after unlock</span>

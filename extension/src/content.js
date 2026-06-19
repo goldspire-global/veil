@@ -443,25 +443,27 @@
     const selection = resolved.selection || window.getSelection();
     const root = GoldspireEditorHost?.findComposeRoot?.(resolved);
     if (root) root.focus?.();
-    range.deleteContents();
 
-    let node = null;
+    selection?.removeAllRanges?.();
+    selection?.addRange?.(range);
+
     let inserted = false;
-    if (document.queryCommandSupported?.('insertText')) {
-      selection?.removeAllRanges?.();
-      selection?.addRange?.(range);
-      inserted = document.execCommand('insertText', false, replacement);
+    if (document.execCommand?.('insertText', false, replacement)) {
+      inserted = true;
     }
     if (!inserted) {
-      node = document.createTextNode(replacement);
+      range.deleteContents();
+      const node = document.createTextNode(replacement);
       range.insertNode(node);
     }
 
-    const cursorTarget = node || range.endContainer;
+    const cursorTarget = inserted ? range.endContainer : (range.endContainer);
     try {
       const after = document.createRange();
-      if (node?.parentNode) {
-        after.setStartAfter(node);
+      if (!inserted && range.endContainer?.nodeType === Node.TEXT_NODE) {
+        after.setStart(range.endContainer, range.endOffset);
+      } else if (!inserted && range.endContainer?.parentNode) {
+        after.setStartAfter(range.endContainer);
       } else {
         after.setStart(cursorTarget, range.endOffset);
       }
@@ -473,9 +475,8 @@
     }
 
     GoldspireEditorHost?.notifyEditor?.(root)
-      || node?.parentElement?.closest?.('[contenteditable=""], [contenteditable="true"]')
-        ?.dispatchEvent(new Event('input', { bubbles: true }));
-    return { kind: 'node', node };
+      || root?.dispatchEvent?.(new Event('input', { bubbles: true }));
+    return { kind: 'range', range };
   }
 
   function replaceRedactedWithPlaintext(context, marker, plaintext) {
@@ -667,15 +668,18 @@
       if (quickBtn && settings) {
         quickBtn.title = global.GoldspireCopy?.quickSecureTitle?.(settings) || 'Quick secure';
       }
+      if (wantUnlockPill) {
         split?.setAttribute('hidden', '');
         unlockBtn?.removeAttribute('hidden');
         if (hint) hint.textContent = '';
         pill.classList.add('gst-selection-status--visible');
-      } else {
+      } else if (wantSecurePill) {
         split?.removeAttribute('hidden');
         unlockBtn?.setAttribute('hidden', '');
         if (hint) hint.textContent = formatPillHint();
         pill.classList.add('gst-selection-status--visible');
+      } else {
+        pill.classList.remove('gst-selection-status--visible');
       }
     }
   }
@@ -775,6 +779,7 @@
       return new Promise((resolve, reject) => {
         GoldspireSecureUI.showSecureSheet({
           ...options,
+          settings: options.settings,
           onSubmit: async (data) => {
             const result = await options.onSubmit(data);
             resolve(result);
@@ -955,7 +960,7 @@
     pill.innerHTML = `
       <div class="gst-pill">
         <div class="gst-pill-split">
-          <button type="button" class="gst-pill-half gst-pill-half--quick" title="Quick secure (team passphrase)">Quick</button>
+          <button type="button" class="gst-pill-half gst-pill-half--quick" title="Quick secure">Quick</button>
           <button type="button" class="gst-pill-half gst-pill-half--options" title="Share with specific people or choose protection">Options</button>
         </div>
         <button type="button" class="gst-pill-unlock" hidden title="Unlock [redacted]">Unlock</button>
@@ -1501,9 +1506,14 @@
     const sharingAvailable = canUseOrgSharing(settings);
 
     const selectionSummary = getSelectionSummary();
+    const isOrg = global.GoldspireCopy?.isOrgProfile?.(settings) || false;
     const defaultMode = settings.defaultSecureMode === 'one-time' ? 'one-time' : 'team';
     const protectionOptions = [
-      { value: 'team', label: global.GoldspireCopy?.secureModeLabel?.(settings, 'team') || 'Team', checked: defaultMode === 'team' },
+      {
+        value: 'team',
+        label: global.GoldspireCopy?.secureModeLabel?.(settings, 'team') || (isOrg ? 'Team passphrase' : 'My passphrase'),
+        checked: defaultMode === 'team',
+      },
       ...(sharingAvailable
         ? [{ value: 'direct', label: 'Specific people', checked: false }]
         : []),
@@ -1514,6 +1524,7 @@
       title: selectionSummary?.multi ? `Secure ${selectionSummary.count} items` : 'Secure selection',
       modes: protectionOptions.map(({ value, label }) => ({ value, label })),
       defaultMode,
+      settings,
       onSubmit: async ({ mode, recipients }) => {
         const isDirect = mode === 'direct';
         const isOneTime = mode === 'one-time';

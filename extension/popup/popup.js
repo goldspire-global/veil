@@ -10,7 +10,7 @@ const PROFILE_DEFAULTS = {
     useSavedPassphrase: true,
     enforceStrongPassphrase: true,
     resecureDelaySeconds: 60,
-    defaultSecureMode: 'team',
+    defaultSecureMode: 'one-time',
     copilotEnabled: true,
     productAnalytics: false,
     selectionUiMode: 'smart',
@@ -341,7 +341,25 @@ function switchTab(tabName) {
   document.querySelectorAll('.tab').forEach((panel) => {
     panel.classList.toggle('tab--active', panel.id === `tab-${tabName}`);
   });
-  if (tabName === 'settings') loadSnoozedSites();
+  if (tabName === 'settings') {
+    loadSnoozedSites();
+    refreshPassphraseField().catch(() => {});
+  }
+}
+
+async function refreshPassphraseField() {
+  const settings = await readSyncSettings();
+  const profile = settings.securityProfile || 'personal';
+  if (profile !== 'personal' || !passphraseInput) return;
+  const stored = await GoldspireSecrets.loadPassphrase('personal');
+  hasStoredPassphrase = Boolean(stored?.trim());
+  if (!passphraseDirty) {
+    passphraseInput.value = stored || '';
+    passphraseInput.placeholder = hasStoredPassphrase
+      ? 'Saved — leave blank to keep, or type to replace'
+      : 'Choose a strong passphrase (16+ chars)';
+  }
+  refreshPassphraseStrength();
 }
 
 async function refreshReadinessChecklist() {
@@ -455,6 +473,17 @@ async function refreshReadinessChecklist() {
   }
 }
 
+function refreshSecureModeOptions(profile) {
+  const modeEl = document.getElementById('defaultSecureMode');
+  if (!modeEl) return;
+  const isOrg = profile === 'organization';
+  const value = modeEl.value === 'one-time' ? 'one-time' : 'team';
+  modeEl.innerHTML = isOrg
+    ? '<option value="team">Team passphrase</option><option value="one-time">One-time code</option>'
+    : '<option value="team">My passphrase</option><option value="one-time">One-time code</option>';
+  modeEl.value = value;
+}
+
 function applyProfileChrome(profile) {
   currentProfile = profile;
   const isOrg = profile === 'organization';
@@ -466,6 +495,7 @@ function applyProfileChrome(profile) {
   document.getElementById('advanced-org-only').hidden = !isOrg;
   document.getElementById('help-personal').hidden = isOrg;
   document.getElementById('help-organization').hidden = !isOrg;
+  refreshSecureModeOptions(profile);
   const portalLink = document.getElementById('help-portal-link');
   const installLink = document.getElementById('help-install-link');
   if (portalLink) portalLink.hidden = !isOrg;
@@ -541,6 +571,7 @@ async function finishSetup(profile, extraSettings = {}, passphrase = '') {
 
   if (profile === 'personal' && passphrase) {
     await GoldspireSecrets.savePassphrase(passphrase, 'personal');
+    hasStoredPassphrase = true;
   }
 
   global.GoldspireVeilEvents?.emit?.({
