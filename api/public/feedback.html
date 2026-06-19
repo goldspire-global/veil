@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Send feedback or report an issue with Veil by Goldspire." />
+  <title>Feedback — Veil</title>
+  <link rel="stylesheet" href="portal/common.css" />
+  <link rel="icon" href="portal/favicon.png" sizes="48x48" />
+  <link rel="icon" href="portal/veil-mark.svg" type="image/svg+xml" />
+</head>
+<body>
+  <div class="layout">
+    <nav class="nav" data-portal-nav></nav>
+
+    <div class="card">
+      <h1>Feedback &amp; support</h1>
+      <p class="lede">Tell us what’s working, what isn’t, or when Veil interrupted you by mistake. We never ask you to paste secrets — describe the situation in plain language.</p>
+
+      <form id="feedback-form" class="form-stack">
+        <label class="field">
+          <span>Type</span>
+          <select id="feedback-kind" name="kind">
+            <option value="feedback">General feedback</option>
+            <option value="bug">Report a problem</option>
+            <option value="falsePositive">Copilot false alert</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>Your message</span>
+          <textarea id="feedback-message" name="message" rows="6" placeholder="What were you doing? What did you expect Veil to do?"></textarea>
+        </label>
+
+        <details class="card card--flat">
+          <summary>Diagnostic info (included automatically — no secrets)</summary>
+          <pre id="feedback-diagnostics" class="diagnostics-block"></pre>
+        </details>
+
+        <div class="btn-row">
+          <button type="submit" class="btn">Open email to send</button>
+          <button type="button" class="btn btn--ghost" id="feedback-copy">Copy report text</button>
+        </div>
+        <p class="hint" id="feedback-status" hidden></p>
+      </form>
+
+      <h2>Other ways to reach us</h2>
+      <ul class="trust-list">
+        <li><a href="mailto:support@goldspireventures.com">support@goldspireventures.com</a> — product help and feedback</li>
+        <li><a href="mailto:security@goldspireventures.com">security@goldspireventures.com</a> — security vulnerabilities (see extension SECURITY.md)</li>
+      </ul>
+    </div>
+
+    <footer class="site-footer" data-portal-footer></footer>
+  </div>
+  <script src="portal/config.js"></script>
+  <script src="portal/app.js"></script>
+  <script src="portal/nav.js"></script>
+  <script src="portal/feedback.js"></script>
+  <script>
+    GoldspirePortalNav.renderPortalNav('feedback');
+    GoldspirePortalNav.renderPortalFooter?.();
+    GoldspirePortalFeedback.init();
+  </script>
+</body>
+</html>

@@ -1874,10 +1874,38 @@
   }).catch(() => {});
 
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && cachedUiSettings) {
-      scheduleOrgShareSync(cachedUiSettings);
+    if (document.visibilityState === 'visible') {
+      runSafe(getSettings().then((s) => {
+        cachedUiSettings = s;
+        scheduleOrgShareSync(s);
+      }));
     }
   });
+
+  function onCopilotSettingsChanged(changes) {
+    if (changes.copilotEnabled) {
+      if (changes.copilotEnabled.newValue === true) {
+        GoldspireVeilSnooze?.clearCompositionAllows?.();
+        GoldspireVeilSnooze?.clearCategorySnoozes?.();
+        GoldspirePasteObserve?.resetPromptState?.();
+      }
+      runSafe(getSettings().then((s) => {
+        cachedUiSettings = s;
+      }));
+    } else if (changes.dlpMode) {
+      runSafe(getSettings().then((s) => {
+        cachedUiSettings = s;
+      }));
+    }
+  }
+
+  try {
+    global.GoldspireBrowser?.storage?.onChanged?.addListener((changes, area) => {
+      if (area === 'sync') onCopilotSettingsChanged(changes);
+    });
+  } catch {
+    // Non-critical.
+  }
 
   detectorController = GoldspireSecureDetector.initDetector(getSettings, (marker, node) => {
     runSafe((async () => {

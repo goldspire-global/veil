@@ -4,7 +4,8 @@
 (function (global) {
   function resolveElement(target) {
     if (!target) return null;
-    if (target instanceof Element) return target;
+    if (typeof Element !== 'undefined' && target instanceof Element) return target;
+    if (target.tagName) return target;
     if (target.parentElement) return target.parentElement;
     return null;
   }
@@ -65,13 +66,34 @@
     const element = resolveElement(target);
     const meta = fieldMeta(element);
     const host = typeof location !== 'undefined' ? location.hostname || '' : '';
+    const path = typeof location !== 'undefined' ? location.pathname || '' : '';
 
-    return global.GoldspireDetectionContext?.createContext?.({
+    const intentMeta = global.GoldspireDetectionIntent?.inferIntent?.(element, {
       host,
+      path,
       source: partial.source || 'paste',
       ...meta,
       ...partial,
-    }) || { host, source: partial.source || 'paste', ...meta };
+    }) || {
+      intent: 'general',
+      outboundRisk: 'medium',
+      expectsPii: false,
+      inForm: false,
+      signals: [],
+    };
+
+    return global.GoldspireDetectionContext?.createContext?.({
+      host,
+      path,
+      source: partial.source || 'paste',
+      ...meta,
+      ...partial,
+      intent: intentMeta.intent,
+      outboundRisk: intentMeta.outboundRisk,
+      expectsPii: intentMeta.expectsPii,
+      inForm: intentMeta.inForm,
+      intentSignals: intentMeta.signals,
+    }) || { host, path, source: partial.source || 'paste', ...meta, ...intentMeta };
   }
 
   function shouldLogDetection(hit, minConfidence = 50) {

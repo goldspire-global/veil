@@ -392,6 +392,24 @@ th { color: var(--muted); font-weight: 600; }
   resize: vertical;
 }
 
+.form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.diagnostics-block {
+  margin: 0.75rem 0 0;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: #11161d;
+  border: 1px solid #2a3444;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.82rem;
+  white-space: pre-wrap;
+  color: #b8c0d0;
+}
+
 @media (max-width: 600px) {
   .btn-row { flex-direction: column; }
   .btn { width: 100%; }

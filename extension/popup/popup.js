@@ -910,6 +910,18 @@ passphraseFromVaultInput?.addEventListener('change', async () => {
   refreshOrgPassphraseStatus(passphraseFromVaultInput.checked, await readSyncSettings());
 });
 
+document.getElementById('copilotEnabled')?.addEventListener('change', async (event) => {
+  const enabled = event.target.checked === true;
+  try {
+    await writeSyncSettings({ ...await readSyncSettings(), copilotEnabled: enabled });
+    showStatus(enabled ? 'Copilot enabled — refresh your mail tab (F5).' : 'Copilot off.');
+    await refreshReadinessChecklist();
+  } catch (error) {
+    showStatus(error?.message || 'Could not save copilot setting.');
+    event.target.checked = !enabled;
+  }
+});
+
 document.getElementById('org-passphrase')?.addEventListener('input', () => {
   orgPassphraseDirty = true;
 });
@@ -1157,4 +1169,66 @@ if (helpPortalLink && typeof GoldspireConstants !== 'undefined') {
   const portal = GoldspireConstants.ORG_PORTAL_URL || '';
   helpPortalLink.href = portal.replace(/join\.html.*$/i, 'index.html') || 'https://join-veil.goldspireventures.com/index.html';
 }
+
+async function collectFeedbackMeta() {
+  const settings = await readSyncSettings();
+  let pageUrl = '';
+  try {
+    const tabs = await api.tabs.query({ active: true, currentWindow: true });
+    pageUrl = GoldspireFeedback?.sanitizePageUrl?.(tabs[0]?.url) || '';
+  } catch {
+    pageUrl = '';
+  }
+  return {
+    version: extensionVersion,
+    browser: GoldspireFeedback?.detectBrowser?.() || 'Unknown',
+    profile: settings.securityProfile || 'personal',
+    copilot: settings.copilotEnabled === true,
+    orgName: settings.orgDisplayName || '',
+    pageUrl,
+  };
+}
+
+async function openFeedbackMail(kind) {
+  if (!GoldspireFeedback) return;
+  const meta = await collectFeedbackMeta();
+  const diagnostics = GoldspireFeedback.buildDiagnostics(meta);
+  const mailto = GoldspireFeedback.buildMailtoUrl(kind, { diagnostics, meta });
+  GoldspireFeedback.openMailto(api, mailto);
+}
+
+async function openFeedbackPortal(kind) {
+  if (!GoldspireFeedback) return;
+  const meta = await collectFeedbackMeta();
+  GoldspireFeedback.openFeedbackPage(api, GoldspireConstants, {
+    v: meta.version,
+    browser: meta.browser,
+    profile: meta.profile,
+    copilot: meta.copilot ? 'on' : 'off',
+    page: meta.pageUrl,
+    kind: kind || 'feedback',
+  });
+}
+
+document.getElementById('feedback-send')?.addEventListener('click', () => {
+  openFeedbackMail('feedback').catch(() => showStatus('Could not open email.'));
+});
+document.getElementById('feedback-bug')?.addEventListener('click', () => {
+  openFeedbackMail('bug').catch(() => showStatus('Could not open email.'));
+});
+document.getElementById('feedback-false-positive')?.addEventListener('click', () => {
+  openFeedbackMail('falsePositive').catch(() => showStatus('Could not open email.'));
+});
+document.getElementById('feedback-portal-link')?.addEventListener('click', (event) => {
+  event.preventDefault();
+  openFeedbackPortal('feedback').catch(() => showStatus('Could not open feedback page.'));
+});
+document.getElementById('popup-feedback-link')?.addEventListener('click', (event) => {
+  event.preventDefault();
+  openFeedbackPortal('feedback').catch(() => showStatus('Could not open feedback page.'));
+});
+
+const popupVersion = document.getElementById('popup-version');
+if (popupVersion) popupVersion.textContent = `v${extensionVersion}`;
+
 refreshSelectionPreview();

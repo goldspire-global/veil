@@ -48,6 +48,7 @@
       <a href="join.html"${activePage === 'join' ? ' aria-current="page"' : ''}>Join</a>
       <a href="install.html"${activePage === 'install' ? ' aria-current="page"' : ''}>Install</a>
       <a href="pricing.html"${activePage === 'pricing' ? ' aria-current="page"' : ''}>Pricing</a>
+      <a href="feedback.html"${activePage === 'feedback' ? ' aria-current="page"' : ''}>Feedback</a>
       <a href="admin.html"${activePage === 'admin' ? ' aria-current="page"' : ''}>Admin</a>
     `;
   }
@@ -60,6 +61,7 @@
       <a href="privacy.html">Privacy</a>
       <a href="terms.html">Terms</a>
       <a href="install.html">Install</a>
+      <a href="feedback.html">Feedback</a>
       <a href="unlock.html">Unlock page</a>
       <a href="mailto:support@goldspireventures.com">Support</a>
     `;

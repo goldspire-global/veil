@@ -98,6 +98,7 @@
         text,
         match,
         nextFieldState,
+        detections,
       );
       await runAction('ignore', request);
       return { ok: true, inserted: text };

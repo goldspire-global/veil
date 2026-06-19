@@ -65,6 +65,27 @@
     return RECOMMENDATIONS[category] || 'Review sensitive content before sharing.';
   }
 
+  const PII_CATEGORIES = new Set([
+    'email', 'phone', 'date_of_birth', 'ssn', 'nhs_number',
+    'national_id', 'passport', 'driver_license', 'medical_record_number',
+    'customer_id', 'pii',
+  ]);
+
+  function applyIntentConfidence(category, confidence, context = {}) {
+    let next = confidence;
+    if (context.intent === 'form_data_entry' && context.expectsPii && PII_CATEGORIES.has(category)) {
+      next = Math.max(0, next - 35);
+    }
+    if (context.intent === 'admin_portal' && context.source === 'type' && PII_CATEGORIES.has(category)) {
+      next = Math.max(0, next - 40);
+    }
+    if (context.intent === 'compose_outbound' && context.source === 'type') {
+      if (category === 'email' || category === 'phone') next = Math.max(0, next - 25);
+      if (category === 'swift_bic') next = Math.max(0, next - 30);
+    }
+    return next;
+  }
+
   function applyContextBoosts(category, severity, confidence, context = {}) {
     let next = normalizeSeverity(severity || BASE_SEVERITY[category] || 'low');
 
@@ -80,6 +101,10 @@
       }
     }
 
+    if (context.intent === 'form_data_entry' && context.expectsPii && PII_CATEGORIES.has(category)) {
+      next = maxSeverity(next, 'low');
+    }
+
     if (context.source === 'paste' && confidence >= 80) {
       next = maxSeverity(next, BASE_SEVERITY[category] || next);
     }
@@ -89,7 +114,8 @@
 
   function scoreOne(result, context = {}) {
     const category = result.category || 'unknown';
-    const confidence = Math.min(100, Math.max(0, Number(result.confidence) || 0));
+    let confidence = Math.min(100, Math.max(0, Number(result.confidence) || 0));
+    confidence = applyIntentConfidence(category, confidence, context);
     const baseSeverity = result.severity || BASE_SEVERITY[category] || 'low';
     const severity = applyContextBoosts(category, baseSeverity, confidence, context);
 

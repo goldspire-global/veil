@@ -47,12 +47,39 @@
   }
 
   const compositionAllowed = [];
-  /** Fields where the user chose Allow — skip copilot for the rest of this page session. */
-  const allowedFields = new WeakSet();
+  let allowEpoch = 0;
+  const fieldAllowEpoch = new WeakMap();
+  const categorySnooze = new Map();
+  const CATEGORY_SNOOZE_MS = 24 * 60 * 60 * 1000;
 
-  function allowComposition(host, text, match, fieldState) {
+  function categoryKey(host, category) {
+    return `${String(host || '').trim()}:${String(category || '').trim()}`;
+  }
+
+  function snoozeCategory(host, category, ms = CATEGORY_SNOOZE_MS) {
+    const key = categoryKey(host, category);
+    if (!key || key === ':') return;
+    categorySnooze.set(key, Date.now() + ms);
+    if (categorySnooze.size > 64) {
+      const oldest = categorySnooze.keys().next().value;
+      categorySnooze.delete(oldest);
+    }
+  }
+
+  function isCategorySnoozed(host, category) {
+    const key = categoryKey(host, category);
+    const until = categorySnooze.get(key);
+    if (!until) return false;
+    if (Date.now() > until) {
+      categorySnooze.delete(key);
+      return false;
+    }
+    return true;
+  }
+
+  function allowComposition(host, text, match, fieldState, detections = []) {
     if (fieldState?.element) {
-      allowedFields.add(fieldState.element);
+      fieldAllowEpoch.set(fieldState.element, allowEpoch);
     }
     compositionAllowed.push({
       host: String(host || '').trim(),
@@ -60,10 +87,25 @@
       fieldSnapshot: String(fieldState?.text || text || ''),
     });
     if (compositionAllowed.length > 24) compositionAllowed.shift();
+
+    const key = String(host || '').trim();
+    for (const hit of detections || []) {
+      if (hit?.category) snoozeCategory(key, hit.category);
+    }
+    if (match?.category) snoozeCategory(key, match.category);
+  }
+
+  function clearCompositionAllows() {
+    compositionAllowed.length = 0;
+    allowEpoch += 1;
+  }
+
+  function clearCategorySnoozes() {
+    categorySnooze.clear();
   }
 
   function isCompositionAllowed(host, text, match, fieldState) {
-    if (fieldState?.element && allowedFields.has(fieldState.element)) {
+    if (fieldState?.element && fieldAllowEpoch.get(fieldState.element) === allowEpoch) {
       return true;
     }
     const key = String(host || '').trim();
@@ -83,6 +125,10 @@
     snoozeHost,
     allowComposition,
     isCompositionAllowed,
+    clearCompositionAllows,
+    clearCategorySnoozes,
+    snoozeCategory,
+    isCategorySnoozed,
     STORAGE_KEY,
   };
 })(typeof globalThis !== 'undefined' ? globalThis : self);

@@ -23,9 +23,10 @@
   }
 
   function resolveSettings(getSettingsSync, getSettings) {
-    const cached = getSettingsSync?.();
-    if (cached) return Promise.resolve(cached);
-    return getSettings?.() || Promise.resolve(null);
+    // Async paths must prefer fresh settings — sync cache can lag after popup toggles.
+    return Promise.resolve()
+      .then(() => getSettings?.())
+      .then((fresh) => fresh || getSettingsSync?.() || null);
   }
 
   function buildContext(target, source) {
@@ -37,8 +38,12 @@
     const trimmed = String(text || '').trim();
     if (!trimmed || trimmed.length < MIN_PROBE_CHARS) return null;
 
-    const detections = (global.GoldspireDetection?.analyze?.(trimmed, context) || [])
-      .filter((hit) => hit.confidence >= MIN_CONFIDENCE);
+    const source = context?.source || 'paste';
+    const raw = global.GoldspireDetection?.analyze?.(trimmed, context) || [];
+    const floor = global.GoldspireDetectionGating?.minConfidence?.(context, source) ?? MIN_CONFIDENCE;
+    const detections = global.GoldspireDetectionGating?.filterForPrompt?.(raw, context, source)
+      || raw.filter((hit) => hit.confidence >= floor);
+
     if (!detections.length) return null;
 
     return { text: trimmed, detections };
@@ -51,6 +56,10 @@
     return false;
   }
 
+  function resetPromptState() {
+    lastPrompt = { key: '', at: 0 };
+  }
+
   function syncProbe({ text, target, source, settings }) {
     if (!settings || !isVeilObserveEnabled(settings)) return null;
     if (!global.GoldspireVeilCopilot?.shouldIntercept?.(settings)) return null;
@@ -60,6 +69,12 @@
 
     const analyzed = analyzeSensitive(text, context);
     if (!analyzed) return null;
+
+    const host = context.host || '';
+    analyzed.detections = analyzed.detections.filter(
+      (hit) => !global.GoldspireVeilSnooze?.isCategorySnoozed?.(host, hit.category),
+    );
+    if (!analyzed.detections.length) return null;
 
     const dedupeKey = global.GoldspireObserveContext?.pasteDedupeKey?.(analyzed.text, context.host)
       || analyzed.text;
@@ -272,27 +287,27 @@
     const trimmed = text.trim();
     if (!trimmed || trimmed.length < MIN_PROBE_CHARS) return;
 
-    const settings = getSettingsSync?.() || await getSettings?.();
-    const probe = settings
+    let settings = getSettingsSync?.();
+    let probe = settings
       ? syncProbe({ text: trimmed, target: event.target, source: 'paste', settings })
       : null;
+
+    if (!probe && getSettings) {
+      const fresh = await getSettings();
+      if (fresh && fresh !== settings) {
+        settings = fresh;
+        probe = syncProbe({ text: trimmed, target: event.target, source: 'paste', settings: fresh });
+      } else if (!settings && fresh) {
+        settings = fresh;
+        probe = syncProbe({ text: trimmed, target: event.target, source: 'paste', settings: fresh });
+      }
+    }
 
     if (probe) {
       event.preventDefault();
       event.stopPropagation();
       await continueFromProbe(probe, event.target);
       return;
-    }
-
-    if (!getSettingsSync?.()) {
-      const loaded = await getSettings?.();
-      const asyncProbe = loaded
-        ? syncProbe({ text: trimmed, target: event.target, source: 'paste', settings: loaded })
-        : null;
-      if (!asyncProbe) return;
-      event.preventDefault();
-      event.stopPropagation();
-      await continueFromProbe(asyncProbe, event.target);
     }
   }
 
@@ -392,6 +407,7 @@
     scanTypedField,
     syncProbe,
     isVeilObserveEnabled,
+    resetPromptState,
     MIN_CONFIDENCE,
   };
 })(typeof globalThis !== 'undefined' ? globalThis : self);

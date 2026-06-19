@@ -675,3 +675,32 @@ body {
   border: 1px dashed rgba(212, 160, 23, 0.45);
   cursor: grab;
 }
+
+.popup__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 11px;
+  color: #8b93a8;
+}
+
+.popup__version {
+  font-variant-numeric: tabular-nums;
+}
+
+.popup__footer-link {
+  color: #c9d1e8;
+  text-decoration: none;
+}
+
+.popup__footer-link:hover {
+  color: #f6d57a;
+}
+
+.row--gap-sm {
+  gap: 6px;
+}

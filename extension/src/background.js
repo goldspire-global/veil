@@ -1,4 +1,4 @@
-importScripts('constants.js', 'browser.js', 'crypto.js', 'marker.js', 'editor-host.js', 'redacted.js', 'secrets.js', 'settings-migrate.js', 'settings.js', 'managed-policy.js', 'share-keys.js', 'org-provision.js', 'share-recipients.js', 'org-share.js', 'events/bus.js', 'events/ingest.js', 'tokens/format.js', 'tokens/api.js');
+importScripts('constants.js', 'browser.js', 'feedback.js', 'crypto.js', 'marker.js', 'editor-host.js', 'redacted.js', 'secrets.js', 'settings-migrate.js', 'settings.js', 'managed-policy.js', 'share-keys.js', 'org-provision.js', 'share-recipients.js', 'org-share.js', 'events/bus.js', 'events/ingest.js', 'tokens/format.js', 'tokens/api.js');
 
 const MENU_ROOT = 'goldspire-root';
 const MENU_SECURE = 'goldspire-secure-selection';
@@ -6,6 +6,7 @@ const MENU_SECURE_OPTIONS = 'goldspire-secure-options';
 const MENU_UNLOCK = 'goldspire-unlock-selection';
 const MENU_RESOLVE_VEIL = 'goldspire-resolve-veil-token';
 const MENU_GENERATE_SECURE = 'goldspire-generate-secure-password';
+const MENU_SEND_FEEDBACK = 'goldspire-send-feedback';
 
 const CONTENT_FILES = [
   'src/constants.js',
@@ -29,6 +30,8 @@ const CONTENT_FILES = [
   'src/ui.js',
   'src/detector.js',
   'src/detection/context.js',
+  'src/detection/intent.js',
+  'src/detection/gating.js',
   'src/detection/compliance.js',
   'src/detection/scoring.js',
   'src/detection/engine.js',
@@ -177,6 +180,22 @@ async function resolveMenuContext(info, tab) {
   return { selectedText, editable };
 }
 
+async function openFeedbackFromMenu(tab) {
+  const settings = await GoldspireSettings.load();
+  const version = api.runtime.getManifest().version;
+  const meta = {
+    version,
+    browser: GoldspireFeedback.detectBrowser(),
+    profile: settings.securityProfile || 'personal',
+    copilot: settings.copilotEnabled === true,
+    orgName: settings.orgDisplayName || '',
+    pageUrl: GoldspireFeedback.sanitizePageUrl(tab?.url),
+  };
+  const diagnostics = GoldspireFeedback.buildDiagnostics(meta);
+  const mailto = GoldspireFeedback.buildMailtoUrl('feedback', { diagnostics, meta });
+  GoldspireFeedback.openMailto(api, mailto);
+}
+
 function createMenus() {
   api.contextMenus.removeAll(() => {
     if (api.runtime.lastError) {
@@ -222,6 +241,13 @@ function createMenus() {
       id: MENU_GENERATE_SECURE,
       parentId: MENU_ROOT,
       title: 'Generate & secure password',
+      contexts: ['all'],
+    });
+
+    api.contextMenus.create({
+      id: MENU_SEND_FEEDBACK,
+      parentId: MENU_ROOT,
+      title: 'Send feedback…',
       contexts: ['all'],
     });
   });
@@ -398,6 +424,12 @@ api.contextMenus.onClicked.addListener((info, tab) => {
 
   if (info.menuItemId === MENU_GENERATE_SECURE) {
     sendToActiveTab('INSERT_GENERATED_SECURED_PASSWORD', {}, frameId);
+  }
+
+  if (info.menuItemId === MENU_SEND_FEEDBACK) {
+    openFeedbackFromMenu(tab).catch((error) => {
+      console.warn('[Veil] feedback failed', error);
+    });
   }
 });
 

@@ -21,5 +21,7 @@
     ORG_PORTAL_URL: "https://join-veil.goldspireventures.com/join.html",
     /** Alarm interval for cloud policy sync (minutes). */
     ORG_SYNC_INTERVAL_MINUTES: 360,
+    /** Product support and feedback email. */
+    SUPPORT_EMAIL: "support@goldspireventures.com",
   };
 })(typeof globalThis !== 'undefined' ? globalThis : self);

@@ -78,6 +78,8 @@ const constantsContents = `/**
     ORG_PORTAL_URL: ${jsString(orgPortalUrl)},
     /** Alarm interval for cloud policy sync (minutes). */
     ORG_SYNC_INTERVAL_MINUTES: ${syncMinutes},
+    /** Product support and feedback email. */
+    SUPPORT_EMAIL: ${jsString(env.SUPPORT_EMAIL || 'support@goldspireventures.com')},
   };
 })(typeof globalThis !== 'undefined' ? globalThis : self);
 `;
@@ -103,7 +105,7 @@ writeFileSync(rootConstantsPath, constantsContents);
 writeFileSync(portalConfigPath, portalConfigContents);
 
 mkdirSync(join(apiPublicDir, 'portal'), { recursive: true });
-for (const file of ['common.css', 'app.js', 'config.js', 'nav.js', 'pricing.js', 'billing.js', 'policy-packs.js', 'veil-mark.svg', 'favicon.png']) {
+for (const file of ['common.css', 'app.js', 'config.js', 'nav.js', 'pricing.js', 'billing.js', 'policy-packs.js', 'feedback.js', 'veil-mark.svg', 'favicon.png']) {
   cpSync(join(repoRoot, 'portal', file), join(apiPublicDir, 'portal', file), { force: true });
 }
 const unlockAssets = ['unlock.html', 'unlock.css', 'unlock.js'];
@@ -126,6 +128,7 @@ for (const page of [
   'pricing.html',
   'privacy.html',
   'terms.html',
+  'feedback.html',
 ]) {
   cpSync(join(repoRoot, page), join(apiPublicDir, page), { force: true });
 }

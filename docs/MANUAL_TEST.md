@@ -4,6 +4,17 @@ Use this after `npm run package` and loading **`extension/dist`** in the browser
 
 See also: [MEMBER_GUIDE.md](MEMBER_GUIDE.md) · [ADMIN_GUIDE.md](ADMIN_GUIDE.md) · [MARKET_READY.md](MARKET_READY.md)
 
+### Automated regression (run before manual browser testing)
+
+```bash
+npm run test:daily-use   # copilot toggle, paste, type, Allow, Stripe keys
+npm test                 # full suite (~97 tests)
+```
+
+`test:daily-use` covers behaviours that are painful to catch manually: stale settings after toggling copilot, `sk_live` / `whsec` detection, Allow target insertion, field snooze reset, and paste dedupe.
+
+Intent-aware gating (`tests/scenarios/intent-gating.test.mjs`) covers signup forms staying quiet on email/DOB while typing, secrets still prompting, and admin portals suppressing PII noise.
+
 ---
 
 ## Before you test (one time per browser)
@@ -29,10 +40,38 @@ See also: [MEMBER_GUIDE.md](MEMBER_GUIDE.md) · [ADMIN_GUIDE.md](ADMIN_GUIDE.md)
 |--------|------------------|
 | **Paste** (Ctrl+V) sensitive text | **Yes** — paste copilot modal |
 | **Highlight** text | **Yes** — Veil bar above selection |
-| **Type** then pause (~0.5s) in compose | **Yes** — if copilot enabled and text matches a detector |
+| **Type** then pause (~0.5s) in compose | **Yes** — secrets and high-risk data only |
+| **Type** on signup / profile forms | **Usually no** — email, name, DOB are expected there |
+| **Type** `sk_live_…` anywhere | **Yes** — secrets always prompt |
 
 ---
 
+## Test 1a — Smart copilot on signup (no noise)
+
+1. Open any signup or job-application form (or a local HTML form with email + DOB fields)
+2. Type your email and date of birth normally — pause briefly after each field
+
+**Expected:** No copilot popup while typing expected PII.
+
+3. In a notes/comments field on the same page, type a Stripe **live** secret key (`sk_live_` plus at least 24 characters — not a real key).
+   Pause ~0.5s.
+
+**Expected:** Copilot **does** appear for the API key.
+
+---
+
+## Test 1b — Admin portal stays quiet on contact fields
+
+1. Open a store partner dashboard or admin settings page (e.g. Partner Center listing contact email)
+2. Type a support email address and pause
+
+**Expected:** No popup for routine contact email while typing.
+
+3. Paste a Stripe secret key into the same field
+
+**Expected:** Copilot prompts on paste.
+
+---
 ## Test 1 — Paste copilot (Outlook new mail)
 
 1. Open Outlook on the web → **New mail**

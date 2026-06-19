@@ -36,6 +36,7 @@ export function polyfillBrowserGlobals(target = {}) {
   g.crypto = globalThis.crypto;
   g.TextEncoder = TextEncoder;
   g.TextDecoder = TextDecoder;
+  g.Event = globalThis.Event;
   g.globalThis = g;
   return g;
 }
@@ -115,6 +116,8 @@ export function loadVeilStack(extra = {}) {
   for (const file of [
     'extension/src/detection/lib-bundle.js',
     'extension/src/detection/context.js',
+    'extension/src/detection/intent.js',
+    'extension/src/detection/gating.js',
     'extension/src/detection/scoring.js',
     'extension/src/detection/engine.js',
     'extension/src/detection/detectors/credit-card.js',
@@ -133,6 +136,9 @@ export function loadVeilStack(extra = {}) {
     'extension/src/tokens/format.js',
     'extension/src/tokens/client.js',
     'extension/src/copilot/controller.js',
+    'extension/src/copilot/snooze.js',
+    'extension/src/copilot/explain.js',
+    'extension/src/observe/context.js',
     'extension/src/copilot/prompt.js',
     'extension/src/observe/paste-insert.js',
     'extension/src/observe/paste-observe.js',
@@ -156,4 +162,34 @@ export async function cleanupScenarioOrg(orgId) {
 export function demoPublicJwk() {
   const { publicKey } = generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
   return publicKey.export({ format: 'jwk' });
+}
+
+/** Minimal textarea mock for paste-insert / observe tests in Node. */
+export function mockTextarea(value = '', selectionStart, selectionEnd) {
+  const start = selectionStart ?? value.length;
+  const end = selectionEnd ?? start;
+  return {
+    tagName: 'TEXTAREA',
+    value,
+    selectionStart: start,
+    selectionEnd: end,
+    parentElement: null,
+    focus() {},
+    setSelectionRange(s, e) {
+      this.selectionStart = s;
+      this.selectionEnd = e;
+    },
+    dispatchEvent() {},
+  };
+}
+
+export function attachCopilotSpy(g) {
+  const calls = [];
+  g.GoldspireVeilCopilotUI = {
+    showVeilCopilot: (opts) => {
+      calls.push(opts);
+      opts.onDismiss?.();
+    },
+  };
+  return calls;
 }
