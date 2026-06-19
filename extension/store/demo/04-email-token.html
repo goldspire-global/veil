@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1280, height=800" />
+    <title>Token reveal — Veil store capture</title>
+    <link rel="stylesheet" href="/demo/demo.css" />
+    <link rel="stylesheet" href="/styles/content.css" />
+  </head>
+  <body>
+    <div class="browser">
+      <div class="browser__bar">
+        <div class="browser__dots"><span></span><span></span><span></span></div>
+        <div class="browser__url">mail.google.com — Inbox</div>
+      </div>
+      <div class="browser__body">
+        <div class="mail">
+          <aside class="mail__sidebar">
+            <h2>Inbox</h2>
+            <div class="mail__item mail__item--active">Vendor onboarding</div>
+            <div class="mail__item">Q2 forecast</div>
+          </aside>
+          <article class="mail__content">
+            <h1 class="mail__subject">Vendor onboarding credentials</h1>
+            <p class="mail__meta">From: ops@goldspireventures.com · Today, 11:02 AM</p>
+            <div class="mail__body">
+              <p>Hi,</p>
+              <p>
+                Use this secure token for the vendor portal login —
+                <button type="button" class="gst-veil-token-btn" title="Click to reveal secure token">[veil:vt_demo_staging_01]</button>
+                — authorized recipients can reveal it on this page.
+              </p>
+              <p>Regards,<br />Ops</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

@@ -29,7 +29,15 @@ if (!existsSync(envPath)) {
 }
 
 const env = parseEnv(readFileSync(envPath, 'utf8'));
-const keys = ['DATABASE_URL', 'DIRECT_URL', 'CORS_ALLOW_ORIGINS'];
+const keys = [
+  'DATABASE_URL',
+  'DIRECT_URL',
+  'CORS_ALLOW_ORIGINS',
+  'STRIPE_SECRET_KEY',
+  'STRIPE_WEBHOOK_SECRET',
+  'STRIPE_PRICE_ID_TEAM_ANNUAL',
+  'STRIPE_PRICE_ID_TEAM_MONTHLY',
+];
 
 for (const key of keys) {
   const value = env[key];

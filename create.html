@@ -15,6 +15,7 @@
     <div id="form-card" class="card">
       <h1>Set up your team</h1>
       <p class="lede">Create your organization, choose how members join, and get a join code to share.</p>
+      <div data-early-access-banner hidden></div>
 
       <form id="create-form">
         <div class="field">
@@ -88,12 +89,14 @@
       </div>
 
       <div class="card card--flat" style="margin-top:1rem;padding:1rem;">
-        <strong>Next: turn on compliance controls</strong>
+        <strong>Next: install Veil &amp; invite members</strong>
         <ol class="steps">
+          <li><a href="install.html">Install the extension</a> in Chrome or Edge (store links on the install page).</li>
           <li>Open <strong>Admin → Policy pack</strong> and choose Finance, Healthcare, GDPR, or Engineering.</li>
           <li>Add member emails in <strong>Admin → Members</strong> if you did not set a company domain.</li>
-          <li>Send the invite email below.</li>
+          <li>Send the invite email below — members join with your code and work email.</li>
         </ol>
+        <p class="hint">Team cloud is <strong>free during early access</strong>. No payment step required.</p>
       </div>
 
       <div class="invite-box">
@@ -114,9 +117,11 @@
   <script src="portal/config.js"></script>
   <script src="portal/app.js"></script>
   <script src="portal/nav.js"></script>
+  <script src="portal/billing.js"></script>
   <script>
     GoldspirePortalNav.renderPortalNav('create');
     GoldspirePortalNav.renderPortalFooter?.();
+    GoldspireBilling.renderEarlyAccessBanner(document.querySelector('[data-early-access-banner]'));
     if (GoldspirePortalApp.loadAdminSession()?.adminToken) {
       window.location.replace('admin.html');
     }

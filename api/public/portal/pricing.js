@@ -76,10 +76,10 @@
       teamEl.innerHTML = `${formatMoney(row.team, currency, locale)} <span class="price-card__unit">/ user / mo</span>`;
     }
     if (enterpriseEl) {
-      enterpriseEl.textContent = `From ${formatMoney(row.enterpriseFrom, currency, locale)} / user / mo at 100+ seats`;
+      enterpriseEl.textContent = `From ${formatMoney(row.enterpriseFrom, currency, locale)} / user / mo at 100+ seats (annual billing)`;
     }
     if (noteEl && currency !== 'USD') {
-      noteEl.textContent = `Prices shown in ${currency} for your region. USD list price: $7 / user / mo (Team).`;
+      noteEl.textContent = `Prices shown in ${currency} for your region. USD list: $7 / user / mo ($84 / user / year, min. 5 seats).`;
       noteEl.hidden = false;
     }
   }

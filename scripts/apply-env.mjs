@@ -51,6 +51,9 @@ const unlockUrl = env.BUILT_IN_PUBLIC_UNLOCK_URL ?? 'https://goldspire-global.gi
 const syncMinutes = Number(env.ORG_SYNC_INTERVAL_MINUTES) || 360;
 const portalOriginValue = portalOrigin(orgPortalUrl);
 const portalUnlockUrl = unlockUrl;
+const earlyAccess = String(env.VEIL_EARLY_ACCESS ?? 'true').toLowerCase() !== 'false';
+const stripePaymentLinkTeam = env.STRIPE_PAYMENT_LINK_TEAM ?? '';
+const stripeBillingPortalUrl = env.STRIPE_BILLING_PORTAL_URL ?? '';
 
 const constantsContents = `/**
  * Built-in defaults shipped with the extension (no user setup required).
@@ -88,6 +91,9 @@ const portalConfigContents = `/**
     PORTAL_URL: ${jsString(orgPortalUrl)},
     PORTAL_ORIGIN: ${jsString(portalOriginValue)},
     UNLOCK_URL: ${jsString(portalUnlockUrl)},
+    EARLY_ACCESS: ${earlyAccess},
+    STRIPE_PAYMENT_LINK_TEAM: ${jsString(stripePaymentLinkTeam)},
+    STRIPE_BILLING_PORTAL_URL: ${jsString(stripeBillingPortalUrl)},
   };
 })(typeof globalThis !== 'undefined' ? globalThis : self);
 `;
@@ -97,7 +103,7 @@ writeFileSync(rootConstantsPath, constantsContents);
 writeFileSync(portalConfigPath, portalConfigContents);
 
 mkdirSync(join(apiPublicDir, 'portal'), { recursive: true });
-for (const file of ['common.css', 'app.js', 'config.js', 'nav.js', 'pricing.js', 'policy-packs.js', 'veil-mark.svg', 'favicon.png']) {
+for (const file of ['common.css', 'app.js', 'config.js', 'nav.js', 'pricing.js', 'billing.js', 'policy-packs.js', 'veil-mark.svg', 'favicon.png']) {
   cpSync(join(repoRoot, 'portal', file), join(apiPublicDir, 'portal', file), { force: true });
 }
 const unlockAssets = ['unlock.html', 'unlock.css', 'unlock.js'];

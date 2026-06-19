@@ -40,6 +40,9 @@ Use this before announcing Veil publicly or onboarding paying customers.
 - [ ] Database backups configured
 - [ ] Error/uptime monitoring on API host
 - [ ] Incident contact documented
+- [ ] Stripe: `npm run stripe:setup` → payment link in `.env` → `npm run env:apply`
+- [ ] Stripe webhook → `https://veil-api.goldspireventures.com/v1/webhooks/stripe` + `STRIPE_WEBHOOK_SECRET` on Railway
+- [ ] Portal deployed (`join-veil`) with `EARLY_ACCESS` + payment link in `portal/config.js`
 
 ## Customer success
 

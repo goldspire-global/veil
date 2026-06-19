@@ -37,6 +37,7 @@
       </form>
 
       <div id="status" class="status" role="status"></div>
+      <p class="hint" id="join-next-steps" hidden>Need the extension? <a href="install.html">Install Veil</a> first, then refresh your mail tab (F5).</p>
     </div>
 
     <footer class="site-footer" data-portal-footer></footer>
@@ -109,6 +110,7 @@
         } else {
           app.setStatus(statusEl, `Connected to ${payload.orgDisplayName || 'your team'}. Open the extension, choose Team, and enter the same join code and email.`, 'ok');
         }
+        document.getElementById('join-next-steps').hidden = false;
       } catch (err) {
         app.setStatus(statusEl, err.message || 'Could not join this team.', 'error');
       } finally {

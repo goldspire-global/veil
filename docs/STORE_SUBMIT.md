@@ -22,7 +22,17 @@ Output:
    - Single purpose: secure sensitive text in web apps
    - Policy URL: `https://join-veil.goldspireventures.com/privacy.html`
 5. **Permissions justification** — paste from `STORE_LISTING.md`
-6. **Screenshots** (1280×800 or 640×400) — capture:
+6. **Screenshots** (1280×800 or 640×400) — auto-capture:
+
+   ```bash
+   npm install
+   npx playwright install chromium
+   npm run capture:store
+   ```
+
+   Output: `extension/store/screenshots/01-popup-checklist.png` … `04-email-token.png`
+
+   Or capture manually:
    - Popup with green setup checklist
    - Copilot modal on paste in Outlook
    - `[redacted]` unlock in email

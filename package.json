@@ -19,7 +19,12 @@
     "test": "node --test tests/detection/*.test.mjs tests/scenarios/*.test.mjs tests/share-recipients.test.mjs",
     "test:detection": "node --test tests/detection/*.test.mjs",
     "test:scenarios": "node --test tests/scenarios/*.test.mjs",
-    "e2e": "node scripts/e2e-smoke.mjs"
+    "e2e": "node scripts/e2e-smoke.mjs",
+    "capture:store": "node scripts/capture-store-screenshots.mjs",
+    "stripe:setup": "node scripts/setup-stripe-veil.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.52.0"
   },
   "dependencies": {
     "pg": "^8.16.0",

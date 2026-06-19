@@ -187,7 +187,10 @@
     }
 
     await logDetections(detections, context);
-    if (!alreadyInserted) {
+    if (!alreadyInserted && target) {
+      global.GoldspirePasteInsert?.insertIntoTarget?.(target, text, caret, { collapseCaret: true })
+        || global.GoldspirePasteInsert?.insertAtCaret?.(caret, text);
+    } else if (!alreadyInserted) {
       global.GoldspirePasteInsert?.insertAtCaret?.(caret, text);
     }
   }

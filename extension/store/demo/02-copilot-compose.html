@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1280, height=800" />
+    <title>Compose — Veil store capture</title>
+    <link rel="stylesheet" href="/demo/demo.css" />
+  </head>
+  <body>
+    <div class="browser">
+      <div class="browser__bar">
+        <div class="browser__dots"><span></span><span></span><span></span></div>
+        <div class="browser__url">outlook.office.com — New message</div>
+      </div>
+      <div class="browser__body">
+        <div class="compose">
+          <div class="compose__toolbar">
+            <button type="button" class="primary">Send</button>
+            <button type="button">Discard</button>
+          </div>
+          <div class="compose__fields">
+            <div class="compose__row">
+              <label>To</label>
+              <input type="text" value="client@example.com" readonly tabindex="-1" />
+            </div>
+            <div class="compose__row">
+              <label>Subject</label>
+              <input type="text" value="API credentials for staging" readonly tabindex="-1" />
+            </div>
+          </div>
+          <div class="compose__editor">
+            <textarea
+              id="compose-body"
+              aria-label="Message body"
+              placeholder="Write your message…"
+            >Hi — here is the staging key:
+
+</textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

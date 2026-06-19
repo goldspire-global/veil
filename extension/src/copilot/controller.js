@@ -80,9 +80,18 @@
 
     if (actionId === 'ignore') {
       let nextFieldState = fieldState;
-      if (!alreadyInserted) {
-        global.GoldspirePasteInsert?.insertAtCaret?.(caret, text);
-        nextFieldState = global.GoldspirePasteInsert?.readFieldState?.(target) || fieldState;
+      if (!alreadyInserted && text) {
+        const existing = fieldState?.text
+          ?? global.GoldspirePasteInsert?.readFieldState?.(target)?.text
+          ?? '';
+        if (!existing.includes(text)) {
+          if (target) {
+            global.GoldspirePasteInsert?.insertIntoTarget?.(target, text, caret, { collapseCaret: true });
+          } else {
+            global.GoldspirePasteInsert?.insertAtCaret?.({ ...caret, collapseCaret: true }, text);
+          }
+          nextFieldState = global.GoldspirePasteInsert?.readFieldState?.(target) || fieldState;
+        }
       }
       global.GoldspireVeilSnooze?.allowComposition?.(
         context.host,
@@ -232,7 +241,8 @@
         return { handled: false, showCopilot: true };
       }
       if (!alreadyInserted) {
-        global.GoldspirePasteInsert?.insertAtCaret?.(caret, text);
+        global.GoldspirePasteInsert?.insertIntoTarget?.(target, text, caret, { collapseCaret: true })
+          || global.GoldspirePasteInsert?.insertAtCaret?.({ ...caret, collapseCaret: true }, text);
       }
       return { handled: true, allowed: true };
     }

@@ -9,32 +9,94 @@
     return target.parentElement || null;
   }
 
+  function isInputLike(element) {
+    if (!element) return false;
+    if (typeof HTMLInputElement !== 'undefined' && element instanceof HTMLInputElement) return true;
+    if (typeof HTMLTextAreaElement !== 'undefined' && element instanceof HTMLTextAreaElement) return true;
+    const tag = String(element.tagName || '').toUpperCase();
+    return tag === 'INPUT' || tag === 'TEXTAREA';
+  }
+
   function getCaretState(target) {
     const element = resolveElement(target);
     if (!element) return null;
 
-    if (
-      (typeof HTMLInputElement !== 'undefined' && element instanceof HTMLInputElement)
-      || String(element.tagName || '').toUpperCase() === 'INPUT'
-    ) {
+    if (isInputLike(element)) {
       const start = element.selectionStart ?? element.value.length;
       const end = element.selectionEnd ?? start;
       return { kind: 'input', element, start, end };
     }
 
+    const editable = global.GoldspireEditorHost?.closestEditable?.(element) || element;
     if (
-      (typeof HTMLTextAreaElement !== 'undefined' && element instanceof HTMLTextAreaElement)
-      || String(element.tagName || '').toUpperCase() === 'TEXTAREA'
+      editable?.isContentEditable
+      || editable?.getAttribute?.('contenteditable') === 'true'
     ) {
-      const start = element.selectionStart ?? element.value.length;
-      const end = element.selectionEnd ?? start;
-      return { kind: 'input', element, start, end };
+      const sel = global.window?.getSelection?.() || global.getSelection?.();
+      if (sel?.rangeCount && editable.contains(sel.anchorNode)) {
+        const range = sel.getRangeAt(0).cloneRange();
+        return { kind: 'range', range, selection: sel, element: editable };
+      }
+      const text = editable.innerText || editable.textContent || '';
+      return { kind: 'contenteditable', element: editable, start: text.length, end: text.length };
     }
 
     const sel = global.window?.getSelection?.() || global.getSelection?.();
     if (!sel || sel.rangeCount === 0) return null;
     const range = sel.getRangeAt(0).cloneRange();
     return { kind: 'range', range, selection: sel };
+  }
+
+  /** Insert into the compose target — avoids pasting via a stale window selection elsewhere. */
+  function insertIntoTarget(target, text, caret, options = {}) {
+    const collapseCaret = options.collapseCaret !== false;
+    const element = resolveElement(target);
+    const replacement = String(text ?? '');
+    if (!element || !replacement) return null;
+
+    if (isInputLike(element)) {
+      const start = caret?.element === element
+        ? caret.start
+        : (element.selectionStart ?? element.value.length);
+      const end = caret?.element === element
+        ? caret.end
+        : (element.selectionEnd ?? start);
+      const before = element.value.slice(0, start);
+      const after = element.value.slice(end);
+      element.focus();
+      element.value = `${before}${replacement}${after}`;
+      const pos = before.length + replacement.length;
+      element.setSelectionRange(
+        collapseCaret ? pos : before.length,
+        collapseCaret ? pos : pos,
+      );
+      element.dispatchEvent(new Event('input', { bubbles: true }));
+      element.dispatchEvent(new Event('change', { bubbles: true }));
+      return {
+        kind: 'input',
+        element,
+        start: before.length,
+        end: pos,
+        selectedText: replacement,
+      };
+    }
+
+    const editable = global.GoldspireEditorHost?.closestEditable?.(element) || element;
+    if (
+      editable?.isContentEditable
+      || editable?.getAttribute?.('contenteditable') === 'true'
+    ) {
+      editable.focus?.();
+      if (caret?.kind === 'range' && caret.range && editable.contains(caret.range.startContainer)) {
+        return insertAtCaret({ ...caret, collapseCaret }, replacement);
+      }
+      const current = editable.innerText || editable.textContent || '';
+      editable.textContent = `${current}${replacement}`;
+      editable.dispatchEvent(new Event('input', { bubbles: true }));
+      return { kind: 'contenteditable', element: editable, selectedText: replacement };
+    }
+
+    return insertAtCaret(caret, replacement);
   }
 
   function insertAtCaret(caret, text) {
@@ -49,7 +111,11 @@
       const cursorStart = before.length;
       const cursorEnd = cursorStart + replacement.length;
       element.focus();
-      element.setSelectionRange(cursorStart, cursorEnd);
+      const collapse = caret.collapseCaret === true;
+      element.setSelectionRange(
+        collapse ? cursorEnd : cursorStart,
+        collapse ? cursorEnd : cursorEnd,
+      );
       element.dispatchEvent(new Event('input', { bubbles: true }));
       element.dispatchEvent(new Event('change', { bubbles: true }));
       return {
@@ -265,6 +331,7 @@
   global.GoldspirePasteInsert = {
     getCaretState,
     insertAtCaret,
+    insertIntoTarget,
     simulatePaste,
     readFieldState,
     findRawMatch,

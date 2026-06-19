@@ -40,6 +40,11 @@
         <div id="dash-status" class="status" role="status"></div>
       </div>
 
+      <div class="card" id="billing-card">
+        <h2>Billing</h2>
+        <div id="billing-status"></div>
+      </div>
+
       <div class="card">
         <h2>Team settings</h2>
         <form id="settings-form">
@@ -204,9 +209,11 @@
   <script src="portal/app.js"></script>
   <script src="portal/nav.js"></script>
   <script src="portal/policy-packs.js"></script>
+  <script src="portal/billing.js"></script>
   <script>
     GoldspirePortalNav.renderPortalNav('admin');
     GoldspirePortalNav.renderPortalFooter?.();
+    GoldspireBilling.renderBillingStatus(document.getElementById('billing-status'));
 
     const app = GoldspirePortalApp;
     const loginCard = document.getElementById('login-card');
