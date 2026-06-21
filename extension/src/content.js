@@ -46,7 +46,7 @@
   }
 
   function canUseOrgSharing(settings) {
-    return global.GoldspireOrgCapability?.canUseCloudApi?.(settings)
+    return globalThis.GoldspireOrgCapability?.canUseCloudApi?.(settings)
       ?? Boolean(
         GoldspireConstants?.ORG_API_BASE
         && settings.orgProvisionSource === 'cloud'
@@ -150,7 +150,7 @@
 
   function isSensitiveSelection(text) {
     const active = document.activeElement;
-    const context = global.GoldspireObserveContext?.contextFromTarget?.(active, { source: 'selection' })
+    const context = globalThis.GoldspireObserveContext?.contextFromTarget?.(active, { source: 'selection' })
       || {
         source: 'selection',
         host: location.hostname || '',
@@ -163,7 +163,7 @@
     if (!text || text.trim().length < 4) return false;
     const trimmed = text.trim();
     const results = globalThis.GoldspireDetection?.analyze?.(trimmed, context) || [];
-    const filtered = global.GoldspireDetectionGating?.filterForPrompt?.(results, context, 'selection')
+    const filtered = globalThis.GoldspireDetectionGating?.filterForPrompt?.(results, context, 'selection')
       || results.filter((hit) => (Number(hit.confidence) || 0) >= 50);
     return filtered.length > 0;
   }
@@ -665,7 +665,7 @@
 
       const quickBtn = pill.querySelector('.gst-pill-half--quick');
       if (quickBtn && settings) {
-        quickBtn.title = global.GoldspireCopy?.quickSecureTitle?.(settings) || 'Quick secure';
+        quickBtn.title = globalThis.GoldspireCopy?.quickSecureTitle?.(settings) || 'Quick secure';
       }
       if (wantUnlockPill) {
         split?.setAttribute('hidden', '');
@@ -1505,12 +1505,12 @@
     const sharingAvailable = canUseOrgSharing(settings);
 
     const selectionSummary = getSelectionSummary();
-    const isOrg = global.GoldspireCopy?.isOrgProfile?.(settings) || false;
+    const isOrg = globalThis.GoldspireCopy?.isOrgProfile?.(settings) || false;
     const defaultMode = settings.defaultSecureMode === 'one-time' ? 'one-time' : 'team';
     const protectionOptions = [
       {
         value: 'team',
-        label: global.GoldspireCopy?.secureModeLabel?.(settings, 'team') || (isOrg ? 'Team passphrase' : 'My passphrase'),
+        label: globalThis.GoldspireCopy?.secureModeLabel?.(settings, 'team') || (isOrg ? 'Team passphrase' : 'My passphrase'),
         checked: defaultMode === 'team',
       },
       ...(sharingAvailable
@@ -1545,9 +1545,9 @@
         const unlockSecret = teamPassphrase;
         if (!unlockSecret) {
           if (settings.passphraseFromVault) {
-            throw new Error(global.GoldspireCopy?.passphraseMissingError?.(settings) || 'Passphrase required.');
+            throw new Error(globalThis.GoldspireCopy?.passphraseMissingError?.(settings) || 'Passphrase required.');
           }
-          throw new Error(global.GoldspireCopy?.passphraseMissingError?.(settings) || 'Set your passphrase in Veil settings first.');
+          throw new Error(globalThis.GoldspireCopy?.passphraseMissingError?.(settings) || 'Set your passphrase in Veil settings first.');
         }
 
         if (settings.enforceStrongPassphrase !== false) {
@@ -1664,7 +1664,7 @@
 
     if (!teamPassphrase) {
       GoldspireSecureUI.showToast(
-        global.GoldspireCopy?.passphraseMissingError?.(settings) || 'Set your passphrase in Veil settings first.',
+        globalThis.GoldspireCopy?.passphraseMissingError?.(settings) || 'Set your passphrase in Veil settings first.',
         'error',
       );
       return;
@@ -1866,7 +1866,7 @@
   }
 
   GoldspireSelection.initSelectionTracking();
-  global.GoldspireMultiSelect?.initMultiWordSelection?.();
+  globalThis.GoldspireMultiSelect?.initMultiWordSelection?.();
 
   document.addEventListener(
     'contextmenu',
@@ -1887,7 +1887,7 @@
   getSettings().then(async (s) => {
     cachedUiSettings = s;
     scheduleOrgShareSync(s);
-    const notice = await global.GoldspireStatusNotice?.consumeNotice?.();
+    const notice = await globalThis.GoldspireStatusNotice?.consumeNotice?.();
     if (notice?.message) {
       safeToast(notice.message, notice.level === 'error' ? 'error' : 'info');
     }
@@ -1920,7 +1920,7 @@
   }
 
   try {
-    global.GoldspireBrowser?.storage?.onChanged?.addListener((changes, area) => {
+    globalThis.GoldspireBrowser?.storage?.onChanged?.addListener((changes, area) => {
       if (area === 'sync') onCopilotSettingsChanged(changes);
     });
   } catch {
