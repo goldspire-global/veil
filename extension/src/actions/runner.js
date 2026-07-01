@@ -23,6 +23,11 @@
       confidence: hit.confidence || 0,
       ...extra,
     });
+    if (actionId === ACTION_IDS.mask) {
+      void global.GoldspireWeeklyDigest?.record?.('mask');
+    } else if (actionId === ACTION_IDS.encrypt) {
+      void global.GoldspireWeeklyDigest?.record?.('secure');
+    }
   }
 
   async function executeMask(request = {}) {

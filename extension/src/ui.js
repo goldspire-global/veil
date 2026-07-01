@@ -28,6 +28,57 @@
     window.setTimeout(() => dismissToast(toast), 3200);
   }
 
+  let activeActionToastTimer = null;
+
+  function showActionToast({
+    message,
+    type = 'info',
+    durationMs = 5000,
+    actionLabel = 'Undo',
+    onAction,
+  } = {}) {
+    document.getElementById(TOAST_ID)?.remove();
+    if (activeActionToastTimer) {
+      window.clearTimeout(activeActionToastTimer);
+      activeActionToastTimer = null;
+    }
+
+    const toast = document.createElement('div');
+    toast.id = TOAST_ID;
+    toast.className = `gst-toast gst-toast--${type} gst-toast--action`;
+    toast.innerHTML = `
+      <span class="gst-toast__message">${escapeHtml(message)}</span>
+      <button type="button" class="gst-toast__action">${escapeHtml(actionLabel)}</button>
+    `;
+    document.documentElement.appendChild(toast);
+
+    const dismiss = () => {
+      if (activeActionToastTimer) {
+        window.clearTimeout(activeActionToastTimer);
+        activeActionToastTimer = null;
+      }
+      dismissToast(toast);
+    };
+
+    toast.querySelector('.gst-toast__action')?.addEventListener('click', () => {
+      dismiss();
+      try {
+        const result = onAction?.();
+        if (result && typeof result.then === 'function') {
+          result.catch(() => {});
+        }
+      } catch {
+        // Non-critical.
+      }
+    });
+
+    requestAnimationFrame(() => {
+      toast.classList.add('gst-toast--visible');
+    });
+
+    activeActionToastTimer = window.setTimeout(dismiss, durationMs);
+  }
+
   function removePrompt() {
     if (activePromptKeyHandler) {
       document.removeEventListener('keydown', activePromptKeyHandler);
@@ -478,6 +529,7 @@
 
   global.GoldspireSecureUI = {
     showToast,
+    showActionToast,
     showPrompt,
     showTeamPassphrasePrompt,
     showSecureSheet,

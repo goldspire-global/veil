@@ -69,7 +69,7 @@ Users can click **Always on this site** on paste, selection, or AI prompts. Rule
 | **Always on this site** | This host + category (+ intent) | Never offered / never stored |
 | **Fleet learning bundle** | Global/org signed weights | Cannot auto-suppress without ops |
 
-`ignore_site` decisions upload as learning signals (when telemetry is on) so fleet bundles can eventually align with repeated per-site allows — local rules apply immediately; bundles refine thresholds over time.
+`ignore_site` decisions upload as learning signals (when telemetry is on) so fleet bundles can eventually align with repeated per-site allows — local rules apply immediately; bundles refine thresholds over time. **Training weights `ignore_site` 2×** vs other overrides when building buckets.
 
 ### Signed bundles
 

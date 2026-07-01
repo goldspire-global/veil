@@ -539,7 +539,8 @@ function isMailComposeHost(host = '') {
 async function refreshHomeShortcuts() {
   const selectionTip = document.getElementById('selection-tip-shortcuts');
   const shortcutHint = document.getElementById('shortcut-hint');
-  if (!selectionTip && !shortcutHint) return;
+  const digestLine = document.getElementById('weekly-digest-line');
+  if (!selectionTip && !shortcutHint && !digestLine) return;
 
   const activeHost = await readActiveTabHost();
   const mailCompose = isMailComposeHost(activeHost);
@@ -549,6 +550,17 @@ async function refreshHomeShortcuts() {
   }
   if (shortcutHint && GoldspireCopy?.helpShortcutsLine) {
     shortcutHint.textContent = GoldspireCopy.helpShortcutsLine();
+  }
+  if (digestLine && global.GoldspireWeeklyDigest) {
+    const show = await GoldspireWeeklyDigest.shouldShowInPopup();
+    const line = await GoldspireWeeklyDigest.buildSummaryLine();
+    if (show && line) {
+      digestLine.hidden = false;
+      digestLine.textContent = line;
+      await GoldspireWeeklyDigest.markShown();
+    } else {
+      digestLine.hidden = true;
+    }
   }
 }
 

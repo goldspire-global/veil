@@ -259,6 +259,99 @@
   background: #7f1d1d;
 }
 
+.gst-toast--action {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: min(420px, calc(100vw - 24px));
+  padding: 10px 12px;
+}
+
+.gst-toast__message {
+  flex: 1;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.gst-toast__action {
+  all: unset;
+  cursor: pointer;
+  font: 600 12px/1 system-ui, sans-serif;
+  color: #f0c14b;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(240, 193, 75, 0.45);
+  flex-shrink: 0;
+}
+
+.gst-toast__action:hover {
+  background: rgba(240, 193, 75, 0.12);
+}
+
+/* ── On-page tour ─────────────────────────────────────────────── */
+
+.gst-page-tour {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483646;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(4, 8, 16, 0.45);
+  pointer-events: auto;
+}
+
+.gst-page-tour__card {
+  width: min(380px, calc(100vw - 32px));
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #151c2e;
+  border: 1px solid rgba(240, 193, 75, 0.35);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  color: #eef2ff;
+  font: 13px/1.45 system-ui, sans-serif;
+}
+
+.gst-page-tour__card h2 {
+  margin: 0 0 6px;
+  font-size: 15px;
+}
+
+.gst-page-tour__card p {
+  margin: 0 0 12px;
+  color: #a8b0c2;
+}
+
+.gst-page-tour__actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.gst-page-tour__btn {
+  all: unset;
+  cursor: pointer;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font: 600 12px/1 system-ui, sans-serif;
+}
+
+.gst-page-tour__btn--primary {
+  background: linear-gradient(135deg, #d4a017, #f0c14b);
+  color: #17130a;
+}
+
+.gst-page-tour__btn--ghost {
+  color: #a8b0c2;
+}
+
+.gst-tour-highlight {
+  outline: 2px solid rgba(240, 193, 75, 0.7) !important;
+  outline-offset: 3px !important;
+  border-radius: 8px;
+}
+
 .gst-fab {
   all: unset;
   box-sizing: border-box;

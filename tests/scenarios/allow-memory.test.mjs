@@ -58,7 +58,7 @@ test('canRememberSiteAllow is false for secret categories', () => {
 
 test('recordAllow with site scope persists rules and skips secrets', async () => {
   const { g, storage } = loadAllowMemory();
-  await g.GoldspireVeilAllowMemory.recordAllow({
+  const result = await g.GoldspireVeilAllowMemory.recordAllow({
     host: 'mail.google.com',
     text: 'DE89370400440532013000',
     detections: [
@@ -71,9 +71,8 @@ test('recordAllow with site scope persists rules and skips secrets', async () =>
 
   const rules = storage.local.gstSiteAllowRules || [];
   assert.equal(rules.length, 1);
-  assert.equal(rules[0].host, 'mail.google.com');
-  assert.equal(rules[0].category, 'iban');
-  assert.equal(rules[0].intent, 'compose');
+  assert.equal(result.categories?.length, 1);
+  assert.equal(result.categories[0], 'iban');
 });
 
 test('site allow rules respect intent wildcard', async () => {

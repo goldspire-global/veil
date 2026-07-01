@@ -63,7 +63,8 @@
 
   async function rememberSiteAllows(host, context = {}, detections = []) {
     const key = String(host || '').trim();
-    if (!key) return;
+    const categories = [];
+    if (!key) return { host: key, intent: '*', categories };
     await loadSiteAllowRules();
     const intent = String(context.intent || '*').trim() || '*';
     let changed = false;
@@ -73,10 +74,34 @@
       const next = { host: key, category: cat, intent, createdAt: Date.now() };
       if (!siteAllowRules.some((rule) => ruleKey(rule) === ruleKey(next))) {
         siteAllowRules.push(next);
+        categories.push(cat);
         changed = true;
       }
     }
     if (changed) await saveSiteAllowRules(siteAllowRules);
+    return { host: key, intent, categories };
+  }
+
+  function formatCategoryList(categories = []) {
+    return [...new Set(categories)].map((c) => String(c).replace(/_/g, ' ')).join(', ');
+  }
+
+  function showSiteAllowUndoToast(payload = {}) {
+    const { host, intent, categories } = payload;
+    if (!host || !categories?.length) return;
+    const label = formatCategoryList(categories);
+    global.GoldspireSecureUI?.showActionToast?.({
+      message: `Won't prompt for ${label} on ${host}`,
+      type: 'info',
+      durationMs: 5000,
+      actionLabel: 'Undo',
+      onAction: async () => {
+        for (const cat of categories) {
+          await removeSiteAllowRule(host, cat, intent);
+        }
+        global.GoldspireSecureUI?.showToast?.('Site allow rule removed.', 'info');
+      },
+    });
   }
 
   async function recordAllow({
@@ -96,14 +121,17 @@
       detections,
     );
     if (scope === 'site') {
-      await rememberSiteAllows(host, context, detections);
+      const saved = await rememberSiteAllows(host, context, detections);
+      showSiteAllowUndoToast(saved);
       void global.GoldspireVeilDecisions?.logChoice?.({
         context,
         detections,
         recommended: 'ignore',
         choice: 'ignore_site',
       });
+      return { scope: 'site', ...saved };
     }
+    return { scope: 'session' };
   }
 
   async function removeSiteAllowRule(host, category, intent = '*') {
@@ -133,5 +161,6 @@
     removeSiteAllowRule,
     clearSiteAllowRules,
     listSiteAllowRules,
+    showSiteAllowUndoToast,
   };
 })(typeof globalThis !== 'undefined' ? globalThis : self);

@@ -117,6 +117,14 @@
     removeOverlay();
     if (marked && global.chrome?.storage?.sync) {
       markComplete(global.chrome);
+      global.chrome.tabs?.query?.({ active: true, currentWindow: true }, (tabs) => {
+        if (global.chrome.runtime?.lastError) return;
+        const tabId = tabs?.[0]?.id;
+        if (!tabId) return;
+        global.chrome.tabs.sendMessage(tabId, { type: 'START_PAGE_TOUR' }, () => {
+          void global.chrome.runtime?.lastError;
+        });
+      });
     }
   }
 

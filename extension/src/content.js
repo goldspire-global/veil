@@ -1723,6 +1723,10 @@
           preview: GoldspireSelection.getLivePreview(),
           inEditable: isComposeContext(),
         }),
+        START_PAGE_TOUR: async () => {
+          global.GoldspireContentTour?.start?.({ force: message.force === true });
+          return { ok: true };
+        },
         VEIL_EXECUTE_ACTION: async () => {
           const settings = await getSettings();
           const selectionContext = getSelectionContext(message);

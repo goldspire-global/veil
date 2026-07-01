@@ -51,20 +51,27 @@ async function loadLabeledSamples(days = 30, orgId = '') {
   const samples = [];
   for (const row of [...orgRows.rows, ...personalRows.rows]) {
     const features = typeof row.features === 'object' && row.features ? row.features : {};
-    const isOverride = row.outcome === 'overrode' || String(row.action || '').startsWith('ignore');
-    const isDismiss = row.action === 'dismiss' || row.outcome === 'ignored';
-    if (row.action === 'prompt') continue;
+    const action = String(row.action || '');
+    const isIgnoreSite = action === 'ignore_site';
+    const isOverride = row.outcome === 'overrode' || action.startsWith('ignore');
+    const isDismiss = action === 'dismiss' || row.outcome === 'ignored';
+    if (action === 'prompt') continue;
 
-    samples.push({
-      host: row.host || '',
-      registrableHost: registrableHost(row.host),
-      category: row.category || '',
-      intent: featureIntent(features),
-      fieldSemantic: featureFieldSemantic(features),
-      confidence: Number(row.confidence) || 0,
-      label: isOverride ? 1 : isDismiss ? 0.5 : 0,
-      features,
-    });
+    const weight = isIgnoreSite ? 2 : 1;
+
+    for (let w = 0; w < weight; w += 1) {
+      samples.push({
+        host: row.host || '',
+        registrableHost: registrableHost(row.host),
+        category: row.category || '',
+        intent: featureIntent(features),
+        fieldSemantic: featureFieldSemantic(features),
+        confidence: Number(row.confidence) || 0,
+        label: isOverride ? 1 : isDismiss ? 0.5 : 0,
+        features,
+        ignoreSite: isIgnoreSite,
+      });
+    }
   }
   return samples;
 }

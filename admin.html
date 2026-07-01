@@ -97,6 +97,11 @@
               <input id="settings-domains" placeholder="company.com" />
               <div class="hint">Separate multiple domains with commas. Required when joining is limited to company email.</div>
             </div>
+            <label class="checkbox">
+              <input id="settings-weekly-digest" type="checkbox" checked />
+              <span>Email me a weekly security summary (metadata only)</span>
+            </label>
+            <p class="hint">Requires server email configuration. You can still export compliance reports anytime under Security.</p>
             <div class="btn-row">
               <button type="submit" class="btn btn--sm">Save changes</button>
             </div>
@@ -138,6 +143,14 @@
                 </div>
                 <button type="submit" class="btn btn--sm">Add member</button>
               </form>
+              <details class="card card--flat" style="margin:1rem 0;padding:1rem;">
+                <summary><strong>Bulk import</strong></summary>
+                <p class="hint">One email per line, or comma-separated. Optional: <code>email, Name</code></p>
+                <textarea id="bulk-members-input" rows="4" placeholder="jane@company.com, Jane Doe&#10;bob@company.com"></textarea>
+                <div class="btn-row">
+                  <button type="button" class="btn btn--ghost btn--sm" id="bulk-members-btn">Import members</button>
+                </div>
+              </details>
               <div class="table-scroll">
                 <table>
                   <thead>
@@ -206,6 +219,15 @@
                 <p class="hint" id="pack-library-status" style="margin-top:0.75rem;min-height:1.2em;"></p>
               </div>
             </div>
+
+            <div class="card">
+              <h2>Azure AD / SCIM provisioning</h2>
+              <p class="lede">Provision member emails from your identity provider. Members still install Veil and join with your code.</p>
+              <div class="btn-row">
+                <button type="button" class="btn btn--sm" id="scim-token-btn">Generate SCIM token</button>
+              </div>
+              <p class="hint" id="scim-status">Token not shown until generated. Endpoint: <code>/scim/v2/Users</code> on your Veil API host.</p>
+            </div>
           </div>
         </section>
 
@@ -226,6 +248,7 @@
                 <button type="button" class="btn btn--ghost btn--sm" id="security-refresh-btn">Refresh</button>
                 <button type="button" class="btn btn--ghost btn--sm" id="security-export-json-btn">Export JSON</button>
                 <button type="button" class="btn btn--ghost btn--sm" id="security-export-csv-btn">Export CSV</button>
+                <button type="button" class="btn btn--ghost btn--sm" id="security-export-compliance-btn">Compliance report</button>
               </div>
               <div id="security-stats" style="margin:1rem 0;"></div>
               <h3 class="hint" style="margin:0 0 0.5rem;font-size:0.9rem;color:var(--text);">By category</h3>
@@ -477,6 +500,8 @@
           GoldspirePortalNav.membershipSummary(org);
         document.getElementById('settings-name').value = org.displayName;
         document.getElementById('settings-email').value = org.adminEmail || '';
+        const digestEl = document.getElementById('settings-weekly-digest');
+        if (digestEl) digestEl.checked = org.settings?.analytics?.weeklyDigest !== false;
         document.getElementById('settings-membership-policy').value = org.settings?.membershipPolicy || 'invite';
         document.getElementById('settings-domains').value = (org.settings?.allowedEmailDomains || []).join(', ');
         document.getElementById('siem-url').value = org.settings?.analytics?.siemWebhookUrl || '';
@@ -518,7 +543,8 @@
               <td>${app.formatWhen(row.createdAt)}</td>
               <td>
                 ${row.active
-                  ? `<button type="button" class="btn btn--danger btn--sm" data-deactivate-member="${row.email}">Remove</button>`
+                  ? `<button type="button" class="btn btn--ghost btn--sm" data-invite-member="${encodeURIComponent(row.email)}">Send invite</button>
+                     <button type="button" class="btn btn--danger btn--sm" data-deactivate-member="${row.email}">Remove</button>`
                   : '<span class="badge badge--off">Removed</span>'}
               </td>
             </tr>
@@ -758,6 +784,15 @@
         headers: { Authorization: `Bearer ${app.getAdminToken()}` },
       });
       if (!response.ok) throw new Error('Export failed.');
+      if (format === 'html' || format === 'compliance') {
+        const html = await response.text();
+        const win = window.open('', '_blank');
+        if (win) {
+          win.document.write(html);
+          win.document.close();
+        }
+        return;
+      }
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -766,6 +801,8 @@
       a.click();
       URL.revokeObjectURL(url);
     }
+
+    document.getElementById('security-export-compliance-btn')?.addEventListener('click', () => downloadSecurityExport('html').catch((e) => app.setStatus(dashStatus, e.message, 'error')));
 
     document.getElementById('security-refresh-btn')?.addEventListener('click', () => loadSecuritySummary());
     document.getElementById('security-days')?.addEventListener('change', () => loadSecuritySummary());
@@ -883,6 +920,9 @@
             .split(',')
             .map((s) => s.trim().replace(/^@+/, ''))
             .filter(Boolean),
+          analytics: {
+            weeklyDigest: document.getElementById('settings-weekly-digest')?.checked !== false,
+          },
         },
       };
       const passphrase = document.getElementById('settings-passphrase').value;
@@ -942,7 +982,65 @@
       }
     });
 
+    document.getElementById('bulk-members-btn')?.addEventListener('click', async () => {
+      const raw = document.getElementById('bulk-members-input')?.value || '';
+      const members = raw.split(/\n/).flatMap((line) => {
+        const parts = line.split(',').map((s) => s.trim()).filter(Boolean);
+        if (!parts.length) return [];
+        if (parts.length === 1) return [{ email: parts[0] }];
+        return [{ email: parts[0], displayName: parts.slice(1).join(', ') }];
+      });
+      if (!members.length) {
+        app.setStatus(dashStatus, 'Add at least one email.', 'error');
+        return;
+      }
+      try {
+        const result = await app.apiAdmin('/v1/orgs/me/members/bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ members }),
+        });
+        app.setStatus(dashStatus, `Imported ${result.added} member(s)${result.errors ? ` · ${result.errors} failed` : ''}.`, 'ok');
+        document.getElementById('bulk-members-input').value = '';
+        await loadDashboard();
+      } catch (error) {
+        app.setStatus(dashStatus, error.message, 'error');
+      }
+    });
+
+    document.getElementById('scim-token-btn')?.addEventListener('click', async () => {
+      try {
+        const result = await app.apiAdmin('/v1/orgs/me/scim/token', { method: 'POST' });
+        const status = document.getElementById('scim-status');
+        if (status) {
+          status.innerHTML = `Endpoint: <code>${result.endpoint}</code><br />Token (copy now): <code style="word-break:break-all">${result.token}</code><br /><span class="hint">${result.note}</span>`;
+        }
+        await app.copyText(`${result.endpoint}\nBearer ${result.token}`);
+        app.setStatus(dashStatus, 'SCIM token generated and copied.', 'ok');
+      } catch (error) {
+        app.setStatus(dashStatus, error.message, 'error');
+      }
+    });
+
     dashboard.addEventListener('click', async (event) => {
+      const inviteEmail = event.target?.dataset?.inviteMember;
+      if (inviteEmail) {
+        try {
+          const result = await app.apiAdmin(`/v1/orgs/me/members/${inviteEmail}/invite`, { method: 'POST' });
+          if (result.emailed) {
+            app.setStatus(dashStatus, `Invite emailed to ${decodeURIComponent(inviteEmail)}.`, 'ok');
+          } else if (result.preview) {
+            await app.copyText(result.preview.text);
+            app.setStatus(dashStatus, 'Email not configured — invite text copied to clipboard.', 'ok');
+          } else {
+            app.setStatus(dashStatus, result.reason || 'Invite could not be sent.', 'error');
+          }
+        } catch (error) {
+          app.setStatus(dashStatus, error.message, 'error');
+        }
+        return;
+      }
+
       const code = event.target?.dataset?.deactivateCode;
       const email = event.target?.dataset?.deactivateMember;
       const device = event.target?.dataset?.revokeDevice;

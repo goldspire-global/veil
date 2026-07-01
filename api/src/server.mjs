@@ -31,6 +31,15 @@ import {
   addOrgMember,
 } from './admin-service.mjs';
 import { ingestExtensionEvents, getSecurityEventSummary, exportSecurityEvents } from './events-service.mjs';
+import { buildComplianceReportHtml } from './compliance-export.mjs';
+import { sendMemberInvite } from './invite-service.mjs';
+import { runWeeklyOrgDigests } from './digest-service.mjs';
+import {
+  bulkAddOrgMembers,
+  handleScimRequest,
+  isScimPath,
+  rotateScimToken,
+} from './scim-service.mjs';
 import { createSecureToken } from './token-service.mjs';
 import {
   listTeams,
@@ -688,6 +697,14 @@ const server = createServer(async (req, res) => {
       return;
     }
 
+    // --- SCIM 2.0 (Azure AD / Okta provisioning) ---
+
+    if (isScimPath(pathname)) {
+      const body = ['POST', 'PATCH', 'PUT'].includes(req.method) ? await readBody(req) : {};
+      json(res, req, 200, await handleScimRequest(req, pathname, url, body));
+      return;
+    }
+
     // --- Organization admin (self-serve console) ---
 
     if (req.method === 'POST' && pathname === '/v1/orgs') {
@@ -752,6 +769,24 @@ const server = createServer(async (req, res) => {
         return;
       }
 
+      if (req.method === 'POST' && pathname === '/v1/orgs/me/members/bulk') {
+        const body = await readBody(req);
+        json(res, req, 200, await bulkAddOrgMembers(admin, body));
+        return;
+      }
+
+      const inviteMatch = pathname.match(/^\/v1\/orgs\/me\/members\/([^/]+)\/invite$/);
+      if (req.method === 'POST' && inviteMatch) {
+        const email = decodeURIComponent(inviteMatch[1]);
+        json(res, req, 200, await sendMemberInvite(admin, email, env));
+        return;
+      }
+
+      if (req.method === 'POST' && pathname === '/v1/orgs/me/scim/token') {
+        json(res, req, 200, await rotateScimToken(admin, env));
+        return;
+      }
+
       if (req.method === 'POST' && pathname === '/v1/orgs/me/members/deactivate') {
         const body = await readBody(req);
         json(res, req, 200, await deactivateMember(admin, body.email));
@@ -794,6 +829,11 @@ const server = createServer(async (req, res) => {
       if (req.method === 'GET' && pathname === '/v1/orgs/me/security-events/export') {
         const days = url.searchParams.get('days') || '30';
         const format = url.searchParams.get('format') || 'json';
+        if (format === 'html' || format === 'compliance') {
+          const html = await buildComplianceReportHtml(admin, { days });
+          text(res, req, 200, html, 'text/html; charset=utf-8');
+          return;
+        }
         const exported = await exportSecurityEvents(admin, { days, format });
         if (exported.format === 'csv') {
           text(res, req, 200, exported.content, 'text/csv; charset=utf-8');

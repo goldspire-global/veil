@@ -86,6 +86,8 @@ const CONTENT_FILES = [
   'src/ai/perplexity.js',
   'src/ai/bootstrap.js',
   'src/observe/paste-observe.js',
+  'src/weekly-digest.js',
+  'src/content-tour.js',
   'src/content.js',
   'src/unlock-host.js',
 ];

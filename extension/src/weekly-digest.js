@@ -1,0 +1,88 @@
+/**
+ * Personal weekly activity summary — local only, shown once per week in popup.
+ */
+(function (global) {
+  const STATS_KEY = 'gstWeeklyActivity';
+  const SHOWN_KEY = 'gstWeeklyDigestShown';
+
+  function weekKey(date = new Date()) {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - d.getDay());
+    return d.toISOString().slice(0, 10);
+  }
+
+  async function readStats() {
+    try {
+      const gst = global.GoldspireBrowser;
+      if (!gst?.storageGet) return { week: weekKey(), secured: 0, masked: 0, copilot: 0 };
+      const stored = await gst.storageGet('local', { [STATS_KEY]: null });
+      const stats = stored[STATS_KEY];
+      const current = weekKey();
+      if (!stats || stats.week !== current) {
+        return { week: current, secured: 0, masked: 0, copilot: 0 };
+      }
+      return stats;
+    } catch {
+      return { week: weekKey(), secured: 0, masked: 0, copilot: 0 };
+    }
+  }
+
+  async function saveStats(stats) {
+    try {
+      global.GoldspireBrowser?.storage?.local?.set?.({ [STATS_KEY]: stats });
+    } catch {
+      // Non-critical.
+    }
+  }
+
+  async function record(action) {
+    const stats = await readStats();
+    if (action === 'secure' || action === 'encrypt') stats.secured += 1;
+    else if (action === 'mask') stats.masked += 1;
+    else if (action === 'copilot') stats.copilot += 1;
+    await saveStats(stats);
+    return stats;
+  }
+
+  async function buildSummaryLine() {
+    const stats = await readStats();
+    const total = stats.secured + stats.masked + stats.copilot;
+    if (total === 0) return '';
+    const parts = [];
+    if (stats.secured) parts.push(`${stats.secured} secured`);
+    if (stats.masked) parts.push(`${stats.masked} masked`);
+    if (stats.copilot) parts.push(`${stats.copilot} copilot assists`);
+    return `This week: ${parts.join(' · ')}.`;
+  }
+
+  async function shouldShowInPopup() {
+    try {
+      const gst = global.GoldspireBrowser;
+      if (!gst?.storageGet) return false;
+      const stored = await gst.storageGet('local', { [STATS_KEY]: null, [SHOWN_KEY]: '' });
+      const stats = stored[STATS_KEY];
+      const current = weekKey();
+      if (!stats || stats.week !== current) return false;
+      if (stored[SHOWN_KEY] === current) return false;
+      return (stats.secured + stats.masked + stats.copilot) > 0;
+    } catch {
+      return false;
+    }
+  }
+
+  async function markShown() {
+    try {
+      global.GoldspireBrowser?.storage?.local?.set?.({ [SHOWN_KEY]: weekKey() });
+    } catch {
+      // Non-critical.
+    }
+  }
+
+  global.GoldspireWeeklyDigest = {
+    record,
+    buildSummaryLine,
+    shouldShowInPopup,
+    markShown,
+  };
+})(typeof globalThis !== 'undefined' ? globalThis : self);

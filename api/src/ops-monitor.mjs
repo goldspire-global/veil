@@ -2,6 +2,7 @@ import { getPool } from './db.mjs';
 import { pingDatabase, maybeRecordHealthCheck } from './ops-service.mjs';
 import { raiseOpsAlert } from './ops-alerts.mjs';
 import { runDailyLearningBackstop, parseLearningTrainConfig } from './learning-scheduler.mjs';
+import { runWeeklyOrgDigests } from './digest-service.mjs';
 function portalOrigin(env) {
   const raw = env.ORG_PORTAL_URL || '';
   try {
@@ -117,6 +118,23 @@ export async function runInternalHealthSample(env, { version, uptimeSec }) {
 export function startOpsMonitor(env, { version, uptimeSec }) {
   const intervalMs = 5 * 60 * 1000;
   let lastLearningTrainDay = '';
+  let lastDigestWeek = '';
+
+  const maybeRunWeeklyDigest = async () => {
+    const week = new Date().toISOString().slice(0, 10);
+    const day = new Date().getUTCDay();
+    if (day !== 1) return;
+    if (lastDigestWeek === week) return;
+    lastDigestWeek = week;
+    try {
+      const result = await runWeeklyOrgDigests(env);
+      if (result.sent > 0) {
+        console.log(`[veil/digest] weekly sent ${result.sent} org digests`);
+      }
+    } catch (error) {
+      console.error('[veil/digest] weekly failed', error);
+    }
+  };
 
   const maybeRunLearningTrain = async () => {
     const config = parseLearningTrainConfig(env);
@@ -145,6 +163,7 @@ export function startOpsMonitor(env, { version, uptimeSec }) {
       console.error('synthetic checks failed', error);
     });
     await maybeRunLearningTrain();
+    await maybeRunWeeklyDigest(env);
   };
   setTimeout(tick, 10_000).unref?.();
   setInterval(tick, intervalMs).unref?.();
