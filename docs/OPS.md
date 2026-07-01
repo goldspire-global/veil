@@ -10,7 +10,7 @@ Production observability without third-party APM. Metadata only — no secrets, 
 https://veil-api.goldspireventures.com/ops.html
 ```
 
-The join portal (`join-veil…`) returns 404 for `/ops.html` via the Cloudflare worker proxy.
+The portal (`veil.goldspireventures.com`) returns 404 for `/ops.html` via the Cloudflare worker proxy.
 
 ## Environment variables (Railway)
 

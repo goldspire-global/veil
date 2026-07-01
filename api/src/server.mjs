@@ -194,6 +194,76 @@ function serveStatic(pathname, res, extraHeaders = {}) {
   return true;
 }
 
+const PORTAL_ORIGIN = (() => {
+  try {
+    return new URL(env.ORG_PORTAL_URL || 'https://veil.goldspireventures.com/join.html').origin;
+  } catch {
+    return 'https://veil.goldspireventures.com';
+  }
+})();
+
+const API_HOST = (() => {
+  try {
+    return new URL(env.ORG_API_BASE || '').hostname.toLowerCase();
+  } catch {
+    return '';
+  }
+})();
+
+function requestHost(req) {
+  return String(req.headers.host || '').split(':')[0].toLowerCase();
+}
+
+function isLocalDevHost(host) {
+  return host === 'localhost' || host === '127.0.0.1';
+}
+
+function isApiProductionHost(req) {
+  const host = requestHost(req);
+  if (isLocalDevHost(host) || !API_HOST) return false;
+  return host === API_HOST;
+}
+
+const PORTAL_MARKETING_PATHS = new Set([
+  '/',
+  '/index.html',
+  '/create.html',
+  '/admin.html',
+  '/join.html',
+  '/install.html',
+  '/privacy.html',
+  '/terms.html',
+  '/feedback.html',
+  '/unlock.html',
+  '/pricing.html',
+]);
+
+function redirectToPortal(req, res, pathname) {
+  const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
+  const target = `${PORTAL_ORIGIN}${pathname === '/' ? '/' : pathname}${url.search}`;
+  res.writeHead(301, { Location: target });
+  res.end();
+  return true;
+}
+
+function redirectPortalFromApi(req, res, pathname) {
+  if (!isApiProductionHost(req)) return false;
+  if (pathname === '/ops.html' || pathname === '/portal/ops.js') return false;
+  if (pathname === '/veil/join' || pathname.startsWith('/veil/join/')) {
+    return redirectToPortal(req, res, '/join.html');
+  }
+  if (PORTAL_MARKETING_PATHS.has(pathname)) {
+    return redirectToPortal(req, res, pathname);
+  }
+  if (pathname.startsWith('/portal/')) {
+    return redirectToPortal(req, res, pathname);
+  }
+  if (pathname.startsWith('/icons/') || pathname === '/unlock.css' || pathname === '/unlock.js') {
+    return redirectToPortal(req, res, pathname);
+  }
+  return false;
+}
+
 function rejectPortalOpsOnApi(req, res, pathname) {
   const host = String(req.headers.host || '').toLowerCase();
   const portalHost = (() => {
@@ -226,6 +296,8 @@ const server = createServer(async (req, res) => {
   });
 
   if (rejectPortalOpsOnApi(req, res, pathname)) return;
+
+  if (redirectPortalFromApi(req, res, pathname)) return;
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204, {
@@ -869,14 +941,6 @@ const server = createServer(async (req, res) => {
       }
     }
 
-    const joinPaths = ['/veil/join', '/secure-text/join'];
-    if (
-      req.method === 'GET'
-      && joinPaths.some((p) => pathname === p || pathname.startsWith(`${p}/`))
-    ) {
-      if (serveStatic('join.html', res)) return;
-    }
-
     const portalPages = {
       '/': 'index.html',
       '/index.html': 'index.html',
@@ -934,7 +998,7 @@ const server = createServer(async (req, res) => {
 
 server.listen(port, '0.0.0.0', () => {
   console.log(`Goldspire org API listening on port ${port}`);
-  console.log(`Join portal: http://localhost:${port}/veil/join`);
+  console.log(`Join portal: http://localhost:${port}/join.html`);
   console.log(`Platform ops: http://localhost:${port}/ops.html`);
 });
 

@@ -1,5 +1,11 @@
-/** Proxy join-veil → Cloudflare Pages portal (secure-text project). */
-const UPSTREAM = 'https://secure-text.pages.dev';
+/** Portal worker: serve veil + join-veil; redirect older hostnames to canonical portal. */
+const UPSTREAM = 'https://veil-81c.pages.dev';
+const CANONICAL = 'https://veil.goldspireventures.com';
+
+const REDIRECT_TO_CANONICAL = new Set([
+  'join-veil.goldspireventures.com',
+  'join-secure-text.goldspireventures.com',
+]);
 
 function upstreamPath(pathname) {
   if (!pathname.endsWith('.html')) return pathname;
@@ -11,6 +17,10 @@ function upstreamPath(pathname) {
 export default {
   async fetch(request) {
     const url = new URL(request.url);
+    if (REDIRECT_TO_CANONICAL.has(url.hostname)) {
+      const target = new URL(url.pathname + url.search, CANONICAL);
+      return Response.redirect(target.toString(), 301);
+    }
     if (url.pathname === '/ops.html' || url.pathname === '/portal/ops.js') {
       return new Response('Not found', { status: 404, headers: { 'Content-Type': 'text/plain' } });
     }
@@ -20,7 +30,7 @@ export default {
       headers: new Headers(request.headers),
       redirect: 'follow',
     };
-    init.headers.set('Host', 'secure-text.pages.dev');
+    init.headers.set('Host', 'veil-81c.pages.dev');
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       init.body = request.body;
     }

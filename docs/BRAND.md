@@ -34,15 +34,15 @@
 
 | Service | URL |
 |---------|-----|
-| Organization portal | `https://join-veil.goldspireventures.com` |
+| Organization portal | `https://veil.goldspireventures.com` |
 | Org API | `https://veil-api.goldspireventures.com` |
 | Public unlock page | `https://goldspire-global.github.io/veil/unlock.html` |
 | GitHub repo | `https://github.com/goldspire-global/veil` |
 | Stripe webhook | `https://veil-api.goldspireventures.com/v1/webhooks/stripe` |
 
-Local dev join path: `http://localhost:3015/veil/join`
+Local dev join path: `http://localhost:3015/join.html`
 
-The API still serves `/secure-text/join` until old bookmarks expire. Retire `join-secure-text` and `secure-text-api` DNS once redirects are in place.
+On production, marketing pages on `veil-api.goldspireventures.com` redirect to the portal. Legacy portal hostnames 301 to `https://veil.goldspireventures.com` via the Cloudflare worker.
 
 User-facing name is always **Veil** or **Veil by Goldspire**. Goldspire is the vendor, not the product.
 

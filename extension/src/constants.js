@@ -5,7 +5,7 @@
 (function (global) {
   global.GoldspireConstants = {
     /** Gmail/Outlook persist https links in sent mail; extension users unlock via in-page modal. */
-    BUILT_IN_PUBLIC_UNLOCK_URL: "https://join-veil.goldspireventures.com/unlock.html",
+    BUILT_IN_PUBLIC_UNLOCK_URL: "https://veil.goldspireventures.com/unlock.html",
     /** One-time codes expire after this window (envelope `exp`). */
     ONE_TIME_TTL_MS: 72 * 60 * 60 * 1000,
     /** PBKDF2-SHA256 iterations (OWASP 2023 guidance for SHA-256). */
@@ -18,11 +18,11 @@
     /** Cloud org API base (no trailing slash). Empty = cloud join disabled. */
     ORG_API_BASE: "https://veil-api.goldspireventures.com",
     /** Organization sign-in / join portal. */
-    ORG_PORTAL_URL: "https://join-veil.goldspireventures.com/join.html",
+    ORG_PORTAL_URL: "https://veil.goldspireventures.com/join.html",
     /** Portal origin (scheme + host) for links and intent detection. */
-    PORTAL_ORIGIN: "https://join-veil.goldspireventures.com",
+    PORTAL_ORIGIN: "https://veil.goldspireventures.com",
     /** Portal hostname for intent detection. */
-    PORTAL_HOST: "join-veil.goldspireventures.com",
+    PORTAL_HOST: "veil.goldspireventures.com",
     /** API hostname for intent detection. */
     API_HOST: "veil-api.goldspireventures.com",
     /** Alarm interval for cloud policy sync (minutes). */

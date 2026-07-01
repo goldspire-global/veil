@@ -125,7 +125,7 @@ async function main() {
       metadata: { veil_product: 'team' },
       after_completion: {
         type: 'redirect',
-        redirect: { url: `${env.ORG_PORTAL_URL?.replace(/\/join\.html.*$/, '') || 'https://join-veil.goldspireventures.com'}/admin.html` },
+        redirect: { url: `${env.ORG_PORTAL_URL?.replace(/\/join\.html.*$/, '') || 'https://veil.goldspireventures.com'}/admin.html` },
       },
       allow_promotion_codes: true,
     });

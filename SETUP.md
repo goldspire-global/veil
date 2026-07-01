@@ -21,7 +21,7 @@ Edit **`.env`** in the repo root:
 | Variable | Dev value | Production |
 |----------|-----------|------------|
 | `ORG_API_BASE` | `http://localhost:3015` | e.g. `https://veil-api.goldspireventures.com` |
-| `ORG_PORTAL_URL` | `http://localhost:3015/veil/join` | e.g. `https://join-veil.goldspireventures.com/join.html` |
+| `ORG_PORTAL_URL` | `http://localhost:3015/join.html` | e.g. `https://veil.goldspireventures.com/join.html` |
 | `BUILT_IN_PUBLIC_UNLOCK_URL` | `https://goldspire-global.github.io/veil/unlock.html` | Same (GitHub Pages) |
 
 ## 3. Apply config to the extension

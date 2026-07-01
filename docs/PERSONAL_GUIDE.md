@@ -28,7 +28,7 @@ Smart copilot stays quiet while you type name, email, or DOB on signup forms —
 
 ## Recipients without Veil
 
-Share the passphrase out of band. If you use one-time mode, share the unlock code separately. External recipients can use the [hosted unlock page](https://join-veil.goldspireventures.com/unlock.html) when you include a link.
+Share the passphrase out of band. If you use one-time mode, share the unlock code separately. External recipients can use the [hosted unlock page](https://veil.goldspireventures.com/unlock.html) when you include a link.
 
 ## Settings
 
@@ -46,4 +46,4 @@ From **Home**, use **How Veil behaves with your settings →** for the same guid
 
 ## Upgrade to a team
 
-Ask your admin for a join code, or [create a team](https://join-veil.goldspireventures.com/create.html) for your organization.
+Ask your admin for a join code, or [create a team](https://veil.goldspireventures.com/create.html) for your organization.

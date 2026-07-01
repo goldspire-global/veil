@@ -2,8 +2,8 @@
 
 For **IT admins and team owners**. Goal: set up your org end-to-end without support email.
 
-**Portal:** `https://join-veil.goldspireventures.com`  
-**Admin console:** `https://join-veil.goldspireventures.com/admin.html`
+**Portal:** `https://veil.goldspireventures.com`  
+**Admin console:** `https://veil.goldspireventures.com/admin.html`
 
 ---
 
@@ -19,7 +19,7 @@ For **IT admins and team owners**. Goal: set up your org end-to-end without supp
 6. **Save immediately:** admin sign-in key, join code — **admin key is shown once only**
 7. Copy the **invite email** from the success screen
 
-Early access: team cloud is free; no card required. After general availability, subscribe in **Admin → Overview → Billing**. See [pricing](https://join-veil.goldspireventures.com/pricing.html).
+Early access: team cloud is free; no card required. After general availability, subscribe in **Admin → Overview → Billing**. See [pricing](https://veil.goldspireventures.com/pricing.html).
 
 ---
 
@@ -45,7 +45,7 @@ Each member needs:
 
 | Requirement | Admin action |
 |-------------|----------------|
-| Extension installed | Send [install link](https://join-veil.goldspireventures.com/install.html) |
+| Extension installed | Send [install link](https://veil.goldspireventures.com/install.html) |
 | Join code | **Access** tab → Create join code |
 | Work email on allow list | **People** tab → Add member (required if invite-only) |
 | Passphrase | Syncs automatically for cloud teams; or share via password manager |
@@ -133,8 +133,8 @@ Internal: [BILLING.md](BILLING.md)
 
 | Issue | Try first | Then |
 |-------|-----------|------|
-| Member can’t join | Email on People list? Active join code? | [feedback](https://join-veil.goldspireventures.com/feedback.html) |
+| Member can’t join | Email on People list? Active join code? | [feedback](https://veil.goldspireventures.com/feedback.html) |
 | Policy not applying | Sub-team assigned? Extension reopened? | Admin → Refresh |
 | Lost admin key | — | Contact support (key not recoverable; may need new org) |
 
-**Feedback:** [feedback.html](https://join-veil.goldspireventures.com/feedback.html) — describe steps, no secrets.
+**Feedback:** [feedback.html](https://veil.goldspireventures.com/feedback.html) — describe steps, no secrets.

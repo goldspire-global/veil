@@ -45,8 +45,8 @@ test('feedback sanitizes page URLs to origin and path only', () => {
 test('feedback page URL carries extension metadata', () => {
   const fb = loadFeedback();
   const url = fb.feedbackPageUrl(
-    { ORG_PORTAL_URL: 'https://join-veil.goldspireventures.com/join.html' },
+    { ORG_PORTAL_URL: 'https://veil.goldspireventures.com/join.html' },
     { v: '1.2.3', browser: 'Chrome', kind: 'falsePositive' },
   );
-  assert.equal(url, 'https://join-veil.goldspireventures.com/feedback.html?v=1.2.3&browser=Chrome&kind=falsePositive');
+  assert.equal(url, 'https://veil.goldspireventures.com/feedback.html?v=1.2.3&browser=Chrome&kind=falsePositive');
 });

@@ -40,11 +40,11 @@ Productivity
 
 ## Privacy policy URL
 
-https://join-veil.goldspireventures.com/privacy.html
+https://veil.goldspireventures.com/privacy.html
 
 ## Support URL
 
-https://join-veil.goldspireventures.com/feedback.html
+https://veil.goldspireventures.com/feedback.html
 
 ## Screenshots (capture before submit)
 

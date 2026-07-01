@@ -3,7 +3,7 @@
 Quick start for **Veil by Goldspire** in Outlook, Gmail, and the web.
 
 **Admin setup?** Your IT owner should follow [ADMIN_GUIDE.md](ADMIN_GUIDE.md).  
-**Install links:** [join-veil install page](https://join-veil.goldspireventures.com/install.html)
+**Install links:** [Veil install page](https://veil.goldspireventures.com/install.html)
 
 > Screenshots: [docs/screenshots/](screenshots/README.md) — visual walkthrough below.
 
@@ -55,5 +55,5 @@ Edge and Chrome are separate installs — join your team in **each browser** you
 
 - Extension popup → **Help** tab → **Your setup** (tailored to your current settings — explains pill/copilot behavior and common “why isn't it showing?” cases)
 - Extension popup → **Help** tab → quick start, shortcuts, feedback
-- [False copilot alert](https://join-veil.goldspireventures.com/feedback.html) — helps us tune detection (no secrets in the form)
+- [False copilot alert](https://veil.goldspireventures.com/feedback.html) — helps us tune detection (no secrets in the form)
 - Ask your admin for join code or passphrase reset

@@ -10,7 +10,7 @@ function getStripe(env = billingEnv()) {
 
 function portalAdminUrl(env = billingEnv()) {
   const portal = String(env.ORG_PORTAL_URL || '').trim();
-  if (!portal) return 'https://join-veil.goldspireventures.com/admin.html';
+  if (!portal) return 'https://veil.goldspireventures.com/admin.html';
   const root = portal.replace(/\/join\.html.*$/i, '/');
   return root.endsWith('/') ? `${root}admin.html` : `${root}/admin.html`;
 }

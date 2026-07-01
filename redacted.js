@@ -31,7 +31,7 @@
 
   function builtInPublicUnlockUrl() {
     return global.GoldspireConstants?.BUILT_IN_PUBLIC_UNLOCK_URL
-      || 'https://join-veil.goldspireventures.com/unlock.html';
+      || 'https://veil.goldspireventures.com/unlock.html';
   }
 
   /** Custom org URL if set; otherwise the Goldspire-hosted page (zero setup). */

@@ -60,7 +60,7 @@ if (!existsSync(envPath)) {
 const env = parseEnv(readFileSync(envPath, 'utf8'));
 const orgApiBase = env.ORG_API_BASE ?? '';
 const orgPortalUrl = env.ORG_PORTAL_URL ?? '';
-const unlockUrl = env.BUILT_IN_PUBLIC_UNLOCK_URL ?? 'https://join-veil.goldspireventures.com/unlock.html';
+const unlockUrl = env.BUILT_IN_PUBLIC_UNLOCK_URL ?? 'https://veil.goldspireventures.com/unlock.html';
 const syncMinutes = Number(env.ORG_SYNC_INTERVAL_MINUTES) || 360;
 const portalOriginValue = portalOrigin(orgPortalUrl);
 const portalHost = hostname(orgPortalUrl);

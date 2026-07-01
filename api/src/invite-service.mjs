@@ -14,7 +14,7 @@ function portalOrigin(env) {
   try {
     return new URL(raw).origin;
   } catch {
-    return String(raw).replace(/\/$/, '') || 'https://join-veil.goldspireventures.com';
+    return String(raw).replace(/\/$/, '') || 'https://veil.goldspireventures.com';
   }
 }
 

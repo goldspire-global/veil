@@ -100,14 +100,14 @@
   }
 
   async function executeCopySecure(request = {}) {
-    if (!deps?.copySecureText) {
+    if (!deps?.copyVeilText) {
       return { ok: false, error: 'copy_secure_not_wired', stub: true };
     }
 
     const text = String(request.text || request.selectionContext?.selectedText || '').trim();
     if (!text) return { ok: false, error: 'no_text' };
 
-    const copied = await deps.copySecureText(text, request.settings, request.options);
+    const copied = await deps.copyVeilText(text, request.settings, request.options);
     if (!copied?.ok) return copied || { ok: false, error: 'copy_failed' };
 
     await logAction(ACTION_IDS.copy_secure, request, { outcome: 'ok' });

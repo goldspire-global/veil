@@ -21,7 +21,7 @@
     { id: 'events', label: 'Event log' },
   ];
 
-  const PORTAL_BASE = 'https://join-veil.goldspireventures.com';
+  const PORTAL_BASE = 'https://veil.goldspireventures.com';
   const KIND_LABELS = {
     feedback: 'Feedback',
     bug: 'Bug',

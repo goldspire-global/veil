@@ -80,8 +80,8 @@ Configure `ORG_API_BASE` and `ORG_PORTAL_URL` in `src/constants.js` when deployi
 ### Production example (Goldspire Ventures)
 
 - `ORG_API_BASE`: `https://veil-api.goldspireventures.com`
-- `ORG_PORTAL_URL`: `https://join-veil.goldspireventures.com/join.html`
-- API env `CORS_ALLOW_ORIGINS`: `https://join-veil.goldspireventures.com`
+- `ORG_PORTAL_URL`: `https://veil.goldspireventures.com/join.html`
+- API env `CORS_ALLOW_ORIGINS`: `https://veil.goldspireventures.com`
 
 ## Local dev
 

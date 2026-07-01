@@ -37,7 +37,7 @@
       "http://localhost:8788/*",
       "https://goldspire.studio/*",
       "https://*.goldspire.studio/*",
-      "https://join-veil.goldspireventures.com/*",
+      "https://veil.goldspireventures.com/*",
       "https://*.goldspireventures.com/*"
     ]
   },

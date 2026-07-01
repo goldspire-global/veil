@@ -2,7 +2,7 @@
 
 Target hostnames:
 
-- Organization portal: `https://join-veil.goldspireventures.com` (Cloudflare Pages)
+- Organization portal: `https://veil.goldspireventures.com` (Cloudflare Pages)
 - Org API: `https://veil-api.goldspireventures.com` (Railway)
 
 Portal pages (static, repo root):
@@ -34,9 +34,9 @@ Run `npm run env:apply` before deploy so `portal/config.js` and `extension/src/c
 
 Pages → your project → **Custom domains** → add:
 
-- `join-veil.goldspireventures.com`
+- `veil.goldspireventures.com`
 
-If Pages DNS provisioning is stuck, the repo ships a Worker proxy (`infra/veil-portal-worker`) that attaches `join-veil` via Workers custom domains (auto DNS). Deploy with `npx wrangler deploy` from that folder.
+If Pages DNS provisioning is stuck, the repo ships a Worker proxy (`infra/veil-portal-worker`) that attaches the portal domain via Workers custom domains (auto DNS). Deploy with `npx wrangler deploy` from that folder.
 
 ## 2) Deploy the org API (Railway)
 
@@ -52,7 +52,7 @@ If Pages DNS provisioning is stuck, the repo ships a Worker proxy (`infra/veil-p
 |----------|---------|
 | `DATABASE_URL` | Supabase transaction pooler (`:6543`) |
 | `DIRECT_URL` | Supabase session pooler (`:5432`) — migrations |
-| `CORS_ALLOW_ORIGINS` | `https://join-veil.goldspireventures.com` |
+| `CORS_ALLOW_ORIGINS` | `https://veil.goldspireventures.com` |
 
 ### C. Database migrations
 
@@ -74,7 +74,7 @@ In repo root `.env`:
 
 ```env
 ORG_API_BASE=https://veil-api.goldspireventures.com
-ORG_PORTAL_URL=https://join-veil.goldspireventures.com/join.html
+ORG_PORTAL_URL=https://veil.goldspireventures.com/join.html
 ```
 
 Then:
@@ -90,7 +90,7 @@ Reload the unpacked extension in Chrome/Edge.
 
 ### Admin — create organization
 
-1. Open `https://join-veil.goldspireventures.com/create.html`
+1. Open `https://veil.goldspireventures.com/create.html`
 2. Enter organization name, optional admin email, team passphrase (or generate)
 3. Click **Create organization**
 4. **Save** the join code and admin token (shown once)
@@ -111,7 +111,7 @@ Reload the unpacked extension in Chrome/Edge.
 
 ### Admin — monitor
 
-`https://join-veil.goldspireventures.com/admin.html` — sign in with admin token to view members, devices, and join codes.
+`https://veil.goldspireventures.com/admin.html` — sign in with admin token to view members, devices, and join codes.
 
 ## 5) API reference (admin)
 
@@ -126,22 +126,12 @@ Reload the unpacked extension in Chrome/Edge.
 
 Extension endpoints unchanged under `/v1/extension/org/*`.
 
-## 6) Migrating from `secure-text` hostnames
+## 6) Legacy hostnames and production checks
 
-If you previously used `join-secure-text` / `secure-text-api`, point DNS to the same services under the new names:
+The Worker (`infra/veil-portal-worker`) 301-redirects older portal domains to `https://veil.goldspireventures.com`. Keep those DNS records on the worker until emailed links expire.
 
-| Old | New |
-|-----|-----|
-| `join-secure-text.goldspireventures.com` | `join-veil.goldspireventures.com` |
-| `secure-text-api.goldspireventures.com` | `veil-api.goldspireventures.com` |
-| `goldspire-global.github.io/secure-text/unlock.html` | `goldspire-global.github.io/veil/unlock.html` |
+**Railway:** custom domain `veil-api.goldspireventures.com`; `CORS_ALLOW_ORIGINS=https://veil.goldspireventures.com`.
 
-**GitHub:** rename repo `secure-text` → `veil` (Settings → General → Repository name). GitHub Pages URL updates automatically.
-
-**Railway:** add custom domain `veil-api.goldspireventures.com`; set `CORS_ALLOW_ORIGINS=https://join-veil.goldspireventures.com`.
-
-**Cloudflare Pages:** add `join-veil.goldspireventures.com` as custom domain.
+**Cloudflare Pages:** custom domain `veil.goldspireventures.com`.
 
 **Stripe:** webhook destination → `https://veil-api.goldspireventures.com/v1/webhooks/stripe`.
-
-**Optional:** keep 301 redirects on old hostnames until sent email links expire. The API still serves `/secure-text/join` for local bookmarks during cutover.

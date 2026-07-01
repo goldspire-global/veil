@@ -1,6 +1,6 @@
 (function () {
-  if (window.__goldspireSecureTextLoaded) return;
-  window.__goldspireSecureTextLoaded = true;
+  if (window.__goldspireVeilLoaded) return;
+  window.__goldspireVeilLoaded = true;
 
   const DEFAULT_SETTINGS = GoldspireSettings.DEFAULT_SETTINGS;
   const runtimeApi = () => globalThis.chrome?.runtime || globalThis.browser?.runtime;
@@ -356,7 +356,7 @@
     }
   }
 
-  async function copySecureText(text, settings, options = {}) {
+  async function copyVeilText(text, settings, options = {}) {
     const profile = getProfile(settings);
     let unlockSecret = options.unlockSecret || '';
     if (!unlockSecret) {
@@ -1964,7 +1964,7 @@
     secureSelection,
     getSelectionContext,
     replaceSelection,
-    copySecureText,
+    copyVeilText,
     executeSecureBatch,
     resolveTeamPassphrase,
   });
